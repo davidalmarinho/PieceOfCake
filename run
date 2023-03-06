@@ -3,4 +3,19 @@ cd out
 cmake ..
 make
 cd bin
-./PieceCake
+if [ "$1" == "" ]
+then
+	./PieceOfCake
+elif [ "$1" == "--mem_check" ]
+then
+	echo "> Info: Using valgrind to check memmory leaks."
+	valgrind --leak-check=full \
+         --show-leak-kinds=all \
+         --track-origins=yes \
+         --verbose \
+         --log-file=valgrind-out.txt \
+         ./PieceOfCake
+
+	cat valgrind-out.txt
+fi
+exit

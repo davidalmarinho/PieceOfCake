@@ -31,3 +31,5 @@ else()
 	message(STATUS "${RED}> Couldn't find Vulkan lib!${COLOR_RESET}")
 endif(VULKAN_FOUND)
 message("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-")
+
+target_include_directories(${PROJECT_NAME} PRIVATE "${PROJECT_SOURCE_DIR}/include/main")
