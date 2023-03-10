@@ -8,7 +8,10 @@ set(CMAKE_PREFIX_PATH "${CMAKE_BINARY_DIR}" "${CMAKE_PREFIX_PATH}")
                                                                                                               
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")                                               
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")                                               
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")                                               
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")         
+# set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "")
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Set color variables
 if(NOT WIN32)
@@ -34,6 +37,11 @@ endif()
 set(SOURCE_FILES main.cpp)
 
 add_subdirectory(src)
+
+target_compile_options("${PROJECT_NAME}" 
+  PRIVATE 
+  -g
+)
 
 # add_executable(${PROJECT_NAME} ${SOURCE_FILES})
                                                                                                              

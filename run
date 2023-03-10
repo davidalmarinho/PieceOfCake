@@ -2,6 +2,7 @@ mkdir -p out
 cd out
 cmake ..
 make
+mv compile_commands.json ../
 cd bin
 if [ "$1" == "" ]
 then
