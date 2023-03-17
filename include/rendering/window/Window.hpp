@@ -2,7 +2,6 @@
 
 #include <GLFW/glfw3.h>
 #include <cstdlib>
-#include <memory>
 
 class Window
 {

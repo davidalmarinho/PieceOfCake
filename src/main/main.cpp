@@ -1,13 +1,6 @@
 #define GLFW_INCLUDE_VULKAN
 
-#include <cstdint>
-#include <vulkan/vulkan_core.h>
-#include <GLFW/glfw3.h>
 #include <iostream>
-#include <stdexcept>
-#include <cstdlib>
-#include <vector>
-#include <string.h>
 
 #include "Window.hpp"
 #include "Application.hpp"

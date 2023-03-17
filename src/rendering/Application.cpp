@@ -6,10 +6,17 @@
 
 #include "Application.hpp"
 
-Application::Application()
+#ifdef NDEBUG
+Application::Application() : m_validationLayers(1, "VK_LAYER_KHRONOS_validation"), ENABLE_VALIDATION_LAYERS(false)
 {
 
 }
+#else
+Application::Application() : m_validationLayers(1, "VK_LAYER_KHRONOS_validation"), ENABLE_VALIDATION_LAYERS(true)
+{
+
+}
+#endif
 
 Application::~Application()
 {
@@ -18,6 +25,10 @@ Application::~Application()
 
 void Application::vkCreateInfo()
 {
+	if (this->ENABLE_VALIDATION_LAYERS && !checkValidationLayerSupport()) {
+		throw std::runtime_error("validation layers requested, but not available!");
+	}
+
 	VkApplicationInfo appInfo{};
 	appInfo.sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 	appInfo.pApplicationName   = "Triangle in Vulkan :)";
@@ -37,7 +48,13 @@ void Application::vkCreateInfo()
 		glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 	createInfo.enabledExtensionCount   = glfwExtensionCount;
 	createInfo.ppEnabledExtensionNames = glfwExtensions;
-	createInfo.enabledLayerCount       = 0;
+
+	if (this->ENABLE_VALIDATION_LAYERS) {
+		createInfo.enabledLayerCount = static_cast<uint32_t>(this->m_validationLayers.size());
+		createInfo.ppEnabledLayerNames = this->m_validationLayers.data();
+	} else {
+		createInfo.enabledLayerCount = 0;
+	}
 
 	// Create the instance
 	VkResult result = vkCreateInstance(&createInfo, nullptr, &m_vkInstance);
@@ -49,11 +66,9 @@ void Application::vkCreateInfo()
 
 	// Count how many extensions we have and put them into an array
 	uint32_t extensionCount = 0;
-	vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, 
-										   nullptr);
+	vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
 	std::vector<VkExtensionProperties> extensionsVec(extensionCount);
-	vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount,
-										   extensionsVec.data());
+	vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensionsVec.data());
 
 	// List vulkan available extensions
 	// std::cout << "Available extensions:\n";
@@ -74,9 +89,34 @@ void Application::vkCreateInfo()
 		}
 
 		if (!foundExtension) {
+			// TODO: Redo this message
 			std::cout << "Error: The glfw extension '" << curExtension 
 				<< "' couldn't been supported by Vulkan.\n";
 		}
 		// std::cout << '\t' << *curExtension << '\n';
 	}
+}
+
+bool Application::checkValidationLayerSupport() {
+	uint32_t layerCount;
+	vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+	std::vector<VkLayerProperties> availableLayers(layerCount);
+	vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+
+	for (const char* layerName : this->m_validationLayers) {
+		bool layerFound = false;
+		for (const auto& layerProperties : availableLayers) {
+			// std::cout << "Available Layer: " << layerName << "\n";
+			// std::cout << "Required Layer: " << layerProperties.layerName << "\n";
+
+			if (strcmp(layerName, layerProperties.layerName) == 0) {
+				layerFound = true;
+				break;
+			}
+		}
+		if (!layerFound) {
+			return false;
+		}
+	}
+	return true;
 }
