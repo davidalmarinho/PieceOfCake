@@ -30,13 +30,14 @@ class HelloTriangleApplication
 
         void createInstance()
         {
-            application = new Application();
-            application->vkCreateInfo();
+            this->application = new Application();
+            this->application->vkCreateInfo();
         }
 
         void initVulkan() 
         {
             createInstance();
+            application->setupDebugMessenger();
         }
 
         void mainLoop() 
