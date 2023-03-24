@@ -2,6 +2,7 @@
 
 #include <vulkan/vulkan_core.h>
 #include <vector>
+#include <optional>
 
 class Application
 {
@@ -9,7 +10,10 @@ private:
 	VkInstance m_vkInstance;
 	const std::vector<const char*> m_validationLayers;
 	const bool ENABLE_VALIDATION_LAYERS;
-	VkDebugUtilsMessengerEXT debugMessenger;
+
+	VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
+
+	VkDebugUtilsMessengerEXT m_debugMessenger;
 
 public:
 	Application();
@@ -17,6 +21,17 @@ public:
 	void vkCreateInfo();
 	bool checkValidationLayerSupport();
 	std::vector<const char*> getRequiredExtensions();
+	
+	// ------------------ Vulkan Physical devices setup ------------------	
+	void pickPhysicalDevice();
+	
+	/**
+	 * Check if a graphics card can handle with all Vulkan operations
+	 *
+	 * @return True if the graphics card can handle with all operations that vulkan
+	 *		   needs, otherwise returns False.
+	 */
+	bool isDeviceSuitable(VkPhysicalDevice physicalDevice);
 
 	// ------------------ Vulkan Messenger Debugger setup ------------------	
 	void setupDebugMessenger();
@@ -30,4 +45,5 @@ public:
 		VkInstance vkInstance, 
 		VkDebugUtilsMessengerEXT dbMessenger, 
 		const VkAllocationCallbacks* pAllocator);
-};
+}
+;

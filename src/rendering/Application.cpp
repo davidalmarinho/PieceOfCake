@@ -1,11 +1,14 @@
+#include <cstdint>
 #include <cstdlib>
 #include <vector>
 #include <GLFW/glfw3.h>
 #include <stdexcept>
 #include <cstring>
 #include <iostream>
+#include <vulkan/vulkan_core.h>
 
 #include "Application.hpp"
+#include "FamilyQueues.hpp"
 
 #ifdef NDEBUG
 Application::Application() : m_validationLayers(1, "VK_LAYER_KHRONOS_validation"), ENABLE_VALIDATION_LAYERS(false)
@@ -23,7 +26,7 @@ Application::~Application()
 {
 	if (this->ENABLE_VALIDATION_LAYERS) {
 		destroyDebugUtilsMessengerEXT(this->m_vkInstance, 
-								this->debugMessenger, nullptr);
+								this->m_debugMessenger, nullptr);
 	}
 
 	vkDestroyInstance(this->m_vkInstance, nullptr);
@@ -70,45 +73,6 @@ void Application::vkCreateInfo()
 	if (vkCreateInstance(&createInfo, nullptr, &m_vkInstance) != VK_SUCCESS) {
 		throw std::runtime_error("Error: Couldn't create VkInstance");
 	}
-
-	// TODO 19/03/2023: This is already handled by VkLayers now. Make sure to remove in the next commit.
-	// - - -
-	// Count how many extensions we have and put them into an array
-	// uint32_t extensionCount = 0;
-	// vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
-	// std::vector<VkExtensionProperties> extensionsVec(extensionCount);
-	// vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensionsVec.data());
-
-	// // List vulkan available extensions
-	// // std::cout << "Available extensions:\n";
-	// // for (const auto &extension : extensionsVec) {
-	// //     std::cout << '\t' << extension.extensionName << '\n';
-	// // }
-
-	// // std::cout << "Avaadwfafilable extensions:\n";
-
-	// if (glfwExtensionCount == 0) {
-	// 	std::cout << "Error:" << '\n';
-	// }
-
-	// // Check if all glfw extensions are supported by Vulkan
-	// for (int i = 0; i < glfwExtensionCount - 1; i++) {
-	// 	const char *curExtension = glfwExtensions.at(0);
-
-	// 	bool foundExtension = false;
-	// 	for (const auto &extension : extensionsVec) {
-	// 		if (strcmp(curExtension, extension.extensionName))
-	// 			foundExtension = true;
-	// 	}
-
-	// 	if (!foundExtension) {
-	// 		// TODO: Redo this message
-	// 		std::cout << "Error: The glfw extension '" << curExtension 
-	// 			<< "' couldn't been supported by Vulkan.\n";
-	// 	}
-	// 	// std::cout << '\t' << *curExtension << '\n';
-	// }
-	// - - -
 }
 
 bool Application::checkValidationLayerSupport() {
@@ -135,6 +99,54 @@ bool Application::checkValidationLayerSupport() {
 		}
 	}
 	return true;
+}
+
+// ------------------ Physical devices setup ------------------
+void Application::pickPhysicalDevice()
+{
+	// List graphics card
+	uint32_t deviceCount = 0;
+	vkEnumeratePhysicalDevices(this->m_vkInstance, &deviceCount, nullptr);
+
+	// Throw error if we haven't find graphics card
+	if (deviceCount == 0) {
+		throw std::runtime_error("Error: Failed to find GPUs with Vulkan support.\n");
+	}
+
+	std::vector<VkPhysicalDevice> devicesVec(deviceCount);
+	vkEnumeratePhysicalDevices(this->m_vkInstance, &deviceCount, devicesVec.data());
+
+	// Check if the computer has a graphics card that Vulkan can handle all
+	// the operations that it needs.
+	for (const auto& device : devicesVec) {
+		if (isDeviceSuitable(device)) {
+			this->m_physicalDevice = device;
+			break;
+		}
+	}
+	if (this->m_physicalDevice == VK_NULL_HANDLE) {
+		throw std::runtime_error("Error: Failed to find a suitable GPU.\n");
+	}
+
+}
+
+bool Application::isDeviceSuitable(VkPhysicalDevice physicalDevice)
+{
+	// Get device properties so we can check if the graphics cards 
+	// support geometry shaders, in this case
+	/*
+	VkPhysicalDeviceProperties deviceProperties;
+	vkGetPhysicalDeviceProperties(this->m_physicalDevice, &deviceProperties);
+	VkPhysicalDeviceFeatures deviceFeatures;
+	vkGetPhysicalDeviceFeatures(this->m_physicalDevice, &deviceFeatures);
+
+	return deviceProperties.deviceType == 
+		VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && deviceFeatures.geometryShader;
+	*/
+
+	QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
+
+	return indices.isComplete();
 }
 
 // ------------------ Vulkan Messenger Debugger setup ------------------
@@ -177,7 +189,7 @@ void Application::setupDebugMessenger()
 	populateDebugMessengerCreateInfo(dbCreateInfo);
 
 	if (createDebugUtilsMessengerEXT
-		(this->m_vkInstance, &dbCreateInfo, nullptr, &debugMessenger) 
+		(this->m_vkInstance, &dbCreateInfo, nullptr, &this->m_debugMessenger) 
 		    != VK_SUCCESS) {
 		throw std::runtime_error("Error: Failed to set up debug messenger.\n");
 	}

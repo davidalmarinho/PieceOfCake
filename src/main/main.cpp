@@ -38,6 +38,7 @@ class HelloTriangleApplication
         {
             createInstance();
             application->setupDebugMessenger();
+            application->pickPhysicalDevice();
         }
 
         void mainLoop() 
