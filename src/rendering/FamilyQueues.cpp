@@ -35,3 +35,4 @@ QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device)
 
 	return indices;
 }
+

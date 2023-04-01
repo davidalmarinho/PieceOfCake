@@ -12,6 +12,8 @@ private:
 	const bool ENABLE_VALIDATION_LAYERS;
 
 	VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
+	VkDevice m_device;
+	VkQueue graphicsQueue;
 
 	VkDebugUtilsMessengerEXT m_debugMessenger;
 
@@ -32,6 +34,7 @@ public:
 	 *		   needs, otherwise returns False.
 	 */
 	bool isDeviceSuitable(VkPhysicalDevice physicalDevice);
+	void createLogicalDevice();
 
 	// ------------------ Vulkan Messenger Debugger setup ------------------	
 	void setupDebugMessenger();

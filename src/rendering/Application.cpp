@@ -29,6 +29,7 @@ Application::~Application()
 								this->m_debugMessenger, nullptr);
 	}
 
+	vkDestroyDevice(this->m_device, nullptr);
 	vkDestroyInstance(this->m_vkInstance, nullptr);
 }
 
@@ -147,6 +148,58 @@ bool Application::isDeviceSuitable(VkPhysicalDevice physicalDevice)
 	QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
 
 	return indices.isComplete();
+}
+
+
+void Application::createLogicalDevice()
+{
+	// Specifies the number of queues we want for a single queue family.
+	// We gonna specify it just to be a queue which supports graphics capabilities
+	QueueFamilyIndices indices = findQueueFamilies(this->m_physicalDevice);
+	VkDeviceQueueCreateInfo queueCreateInfo{};
+	queueCreateInfo.sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+	queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
+
+	// Creating just one queue
+	// TODO: In future is a good idea to make this multithread
+	queueCreateInfo.queueCount       = 1;
+	float queuePriority              = 1.0f;
+	queueCreateInfo.pQueuePriorities = &queuePriority;
+
+	VkPhysicalDeviceFeatures deviceFeatures{};
+
+	// Creating Logical Device
+	VkDeviceCreateInfo createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+
+	// Pointers to the queue creation info and device features structs
+	createInfo.pQueueCreateInfos    = &queueCreateInfo;
+	createInfo.queueCreateInfoCount = 1;
+	createInfo.pEnabledFeatures     = &deviceFeatures;
+
+	// Guarantee compatibility with older devices and older vulkan devices.
+	// Because this isn't needed anymore.
+	createInfo.enabledExtensionCount = 0;
+	if (this->ENABLE_VALIDATION_LAYERS) {
+		createInfo.enabledLayerCount = 
+			static_cast<uint32_t>(this->m_validationLayers.size());
+			createInfo.ppEnabledLayerNames = this->m_validationLayers.data();
+	}
+	else {
+		createInfo.enabledLayerCount = 0;
+	}
+	
+	// TODO: Here we can specify extensions to do more cool stuff with vulkan
+	
+	// Instantiate the logical
+	if (vkCreateDevice(this->m_physicalDevice, &createInfo, 
+					nullptr, &this->m_device) != VK_SUCCESS) {
+		throw std::runtime_error("Error: Logical Device creation has failed!\n");
+	}
+
+	// Retrieve queue handles for each queue family
+	vkGetDeviceQueue(this->m_device, indices.graphicsFamily.value(), 0,
+			   &graphicsQueue);
 }
 
 // ------------------ Vulkan Messenger Debugger setup ------------------
