@@ -1,11 +1,12 @@
 #include "FamilyQueues.hpp"
+#include <vulkan/vulkan_core.h>
 
 bool QueueFamilyIndices::isComplete()
 {
-	return this->graphicsFamily.has_value();
+	return this->graphicsFamily.has_value() && this->presentFamily.has_value();
 }
 
-QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device)
+QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface)
 {
 	// Logic to find graphics queue family
 	QueueFamilyIndices indices;
@@ -22,6 +23,13 @@ QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device)
 	for (const auto& queueFamily : queueFamiliesVec) {
 		if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
 			indices.graphicsFamily = i;
+		}
+
+		// Ensure that a device can present images to the surface we created
+		VkBool32 presentSupport = false;
+		vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+		if (presentSupport) {
+			indices.presentFamily = i;
 		}
 
 		// Check if we have already found all the queue families

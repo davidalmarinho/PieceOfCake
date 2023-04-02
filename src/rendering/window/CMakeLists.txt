@@ -5,4 +5,5 @@ add_library(window
 target_include_directories(window
 	PUBLIC
 	"${PROJECT_SOURCE_DIR}/include/rendering/window/"
+	"${PROJECT_SOURCE_DIR}/include/rendering/"
 )

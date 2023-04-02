@@ -1,5 +1,8 @@
 #include "Window.hpp"
+
 #include <GLFW/glfw3.h>
+#include <stdexcept>
+#include <vulkan/vulkan.h>
 
 Window::Window(const char *t_title, int t_width, int t_height)
 {
@@ -26,6 +29,14 @@ void Window::init()
 	// Create window
 	this->m_glfwWindow = glfwCreateWindow(this->m_width, this->m_height, 
 				   this->m_title, nullptr, nullptr);
+}
+
+void Window::createSurface(Application *app)
+{
+	if (glfwCreateWindowSurface(app->getVkInstance(), this->m_glfwWindow, nullptr, app->getVkSurfacePtr()) != VK_SUCCESS) {
+		// TODO: Create a cool error system handling
+		throw std::runtime_error("Error: Failed to create window surface!\n");
+	}
 }
 
 GLFWwindow *Window::getGlfwWindow()

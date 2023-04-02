@@ -6,6 +6,7 @@
 #include <cstring>
 #include <iostream>
 #include <vulkan/vulkan_core.h>
+#include <set>
 
 #include "Application.hpp"
 #include "FamilyQueues.hpp"
@@ -30,6 +31,7 @@ Application::~Application()
 	}
 
 	vkDestroyDevice(this->m_device, nullptr);
+	vkDestroySurfaceKHR(this->m_vkInstance, this->m_vkSurface, nullptr);
 	vkDestroyInstance(this->m_vkInstance, nullptr);
 }
 
@@ -145,7 +147,7 @@ bool Application::isDeviceSuitable(VkPhysicalDevice physicalDevice)
 		VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && deviceFeatures.geometryShader;
 	*/
 
-	QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
+	QueueFamilyIndices indices = findQueueFamilies(physicalDevice, this->m_vkSurface);
 
 	return indices.isComplete();
 }
@@ -155,16 +157,21 @@ void Application::createLogicalDevice()
 {
 	// Specifies the number of queues we want for a single queue family.
 	// We gonna specify it just to be a queue which supports graphics capabilities
-	QueueFamilyIndices indices = findQueueFamilies(this->m_physicalDevice);
-	VkDeviceQueueCreateInfo queueCreateInfo{};
-	queueCreateInfo.sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-	queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
+	QueueFamilyIndices indices = findQueueFamilies(this->m_physicalDevice, this->m_vkSurface);
+	std::vector<VkDeviceQueueCreateInfo> queueCreateInfoVec;
+	std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
-	// Creating just one queue
+	// Creating queues
 	// TODO: In future is a good idea to make this multithread
-	queueCreateInfo.queueCount       = 1;
-	float queuePriority              = 1.0f;
-	queueCreateInfo.pQueuePriorities = &queuePriority;
+	float queuePriority = 1.0f;
+	for (uint32_t queueFamily : uniqueQueueFamilies) {
+		VkDeviceQueueCreateInfo queueCreateInfo{};
+		queueCreateInfo.sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+		queueCreateInfo.queueFamilyIndex = queueFamily;
+		queueCreateInfo.queueCount       = 1;
+		queueCreateInfo.pQueuePriorities = &queuePriority;
+		queueCreateInfoVec.push_back(queueCreateInfo);
+	}
 
 	VkPhysicalDeviceFeatures deviceFeatures{};
 
@@ -173,8 +180,8 @@ void Application::createLogicalDevice()
 	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 
 	// Pointers to the queue creation info and device features structs
-	createInfo.pQueueCreateInfos    = &queueCreateInfo;
-	createInfo.queueCreateInfoCount = 1;
+	createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfoVec.size());
+	createInfo.pQueueCreateInfos    = queueCreateInfoVec.data();
 	createInfo.pEnabledFeatures     = &deviceFeatures;
 
 	// Guarantee compatibility with older devices and older vulkan devices.
@@ -198,8 +205,8 @@ void Application::createLogicalDevice()
 	}
 
 	// Retrieve queue handles for each queue family
-	vkGetDeviceQueue(this->m_device, indices.graphicsFamily.value(), 0,
-			   &graphicsQueue);
+	vkGetDeviceQueue(this->m_device, indices.presentFamily.value(), 0,
+			   &this->m_presentQueue);
 }
 
 // ------------------ Vulkan Messenger Debugger setup ------------------
@@ -263,6 +270,12 @@ void Application::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateIn
 	// dbCreateInfo.pUserData = nullptr;
 }
 
+/**
+ * @brief Get extensions which are required by vulkan, like:
+ *		  -> VK_KHR_surface
+ *
+ * @return 
+ */
 std::vector<const char*> Application::getRequiredExtensions()
 {
 	uint32_t glfwExtensionCount = 0;
@@ -290,3 +303,15 @@ void Application::destroyDebugUtilsMessengerEXT(
 		func(vkInstance, dbMessenger, pAllocator);
 	}
 }
+
+// Getters and setters
+VkInstance Application::getVkInstance()
+{
+	return this->m_vkInstance;
+}
+
+VkSurfaceKHR* Application::getVkSurfacePtr()
+{
+	return &this->m_vkSurface;
+}
+

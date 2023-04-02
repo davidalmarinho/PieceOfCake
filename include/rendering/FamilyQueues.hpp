@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <vulkan/vulkan_core.h>
 #include <iostream>
 #include <vector>
@@ -7,6 +8,7 @@
 
 struct QueueFamilyIndices {
 	std::optional<uint32_t> graphicsFamily;
+	std::optional<uint32_t> presentFamily;
 
 	bool isComplete();
 };
@@ -17,4 +19,4 @@ struct QueueFamilyIndices {
  * @param device
  * @return 
  */
-QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
+QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface);

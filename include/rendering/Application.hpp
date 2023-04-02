@@ -13,7 +13,10 @@ private:
 
 	VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
 	VkDevice m_device;
-	VkQueue graphicsQueue;
+	VkQueue m_graphicsQueue;
+	VkQueue m_presentQueue;
+
+	VkSurfaceKHR m_vkSurface;
 
 	VkDebugUtilsMessengerEXT m_debugMessenger;
 
@@ -48,5 +51,9 @@ public:
 		VkInstance vkInstance, 
 		VkDebugUtilsMessengerEXT dbMessenger, 
 		const VkAllocationCallbacks* pAllocator);
-}
-;
+	
+	// Getters and setters
+	VkInstance getVkInstance();
+	VkSurfaceKHR* getVkSurfacePtr();
+};
+
