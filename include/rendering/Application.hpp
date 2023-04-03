@@ -18,6 +18,8 @@ private:
 
 	VkSurfaceKHR m_vkSurface;
 
+	const std::vector<const char*> m_deviceExtensions;
+
 	VkDebugUtilsMessengerEXT m_debugMessenger;
 
 public:
@@ -51,9 +53,15 @@ public:
 		VkInstance vkInstance, 
 		VkDebugUtilsMessengerEXT dbMessenger, 
 		const VkAllocationCallbacks* pAllocator);
+
+	// Swapchain
+	bool checkDeviceExtensionSupport(VkPhysicalDevice vkDevice);
 	
 	// Getters and setters
 	VkInstance getVkInstance();
+	VkPhysicalDevice getPhysicalDevice();
+	VkDevice getDevice();
+	VkSurfaceKHR getVkSurface();
 	VkSurfaceKHR* getVkSurfacePtr();
 };
 

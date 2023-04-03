@@ -10,16 +10,21 @@
 
 #include "Application.hpp"
 #include "FamilyQueues.hpp"
+#include "SwapChain.hpp"
 
 #ifdef NDEBUG
-Application::Application() : m_validationLayers(1, "VK_LAYER_KHRONOS_validation"), ENABLE_VALIDATION_LAYERS(false)
+Application::Application() : m_validationLayers(1, "VK_LAYER_KHRONOS_validation"), 
+							 ENABLE_VALIDATION_LAYERS(false),
+							 m_deviceExtensions(1, VK_KHR_SWAPCHAIN_EXTENSION_NAME)
 {
-
+	// Constructor if we are in release version
 }
 #else
-Application::Application() : m_validationLayers(1, "VK_LAYER_KHRONOS_validation"), ENABLE_VALIDATION_LAYERS(true)
+Application::Application() : m_validationLayers(1, "VK_LAYER_KHRONOS_validation"), 
+							 ENABLE_VALIDATION_LAYERS(true),
+							 m_deviceExtensions(1, VK_KHR_SWAPCHAIN_EXTENSION_NAME)
 {
-
+	// Consttructor if we are in debug version
 }
 #endif
 
@@ -148,15 +153,25 @@ bool Application::isDeviceSuitable(VkPhysicalDevice physicalDevice)
 	*/
 
 	QueueFamilyIndices indices = findQueueFamilies(physicalDevice, this->m_vkSurface);
+	
+	bool extensionSupport = checkDeviceExtensionSupport(physicalDevice);
 
-	return indices.isComplete();
+	bool swapChainAdequate = false;
+	if (extensionSupport) {
+		SwapChainSupportDetails swapChainSupport 
+			= querySwapChainSupport(physicalDevice, this->m_vkSurface); 
+		swapChainAdequate = !swapChainSupport.surfaceFormats.empty() 
+							&& !swapChainSupport.presentModes.empty();
+	}
+
+	return indices.isComplete() && extensionSupport && swapChainAdequate;
 }
 
 
 void Application::createLogicalDevice()
 {
 	// Specifies the number of queues we want for a single queue family.
-	// We gonna specify it just to be a queue which supports graphics capabilities
+	// We gonna specify it just to be a queue which supports graphics capabilities.
 	QueueFamilyIndices indices = findQueueFamilies(this->m_physicalDevice, this->m_vkSurface);
 	std::vector<VkDeviceQueueCreateInfo> queueCreateInfoVec;
 	std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
@@ -175,7 +190,7 @@ void Application::createLogicalDevice()
 
 	VkPhysicalDeviceFeatures deviceFeatures{};
 
-	// Creating Logical Device
+	// Creating Logical Device.
 	VkDeviceCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 
@@ -184,21 +199,24 @@ void Application::createLogicalDevice()
 	createInfo.pQueueCreateInfos    = queueCreateInfoVec.data();
 	createInfo.pEnabledFeatures     = &deviceFeatures;
 
+	// Turn on swap chain system.
+	createInfo.enabledExtensionCount   = static_cast<uint32_t>(this->m_deviceExtensions.size());
+	createInfo.ppEnabledExtensionNames = this->m_deviceExtensions.data();
+
 	// Guarantee compatibility with older devices and older vulkan devices.
 	// Because this isn't needed anymore.
-	createInfo.enabledExtensionCount = 0;
 	if (this->ENABLE_VALIDATION_LAYERS) {
 		createInfo.enabledLayerCount = 
 			static_cast<uint32_t>(this->m_validationLayers.size());
-			createInfo.ppEnabledLayerNames = this->m_validationLayers.data();
+		createInfo.ppEnabledLayerNames = this->m_validationLayers.data();
 	}
 	else {
 		createInfo.enabledLayerCount = 0;
 	}
 	
-	// TODO: Here we can specify extensions to do more cool stuff with vulkan
+	// TODO: Here we can specify extensions to do more cool stuff with vulkan.
 	
-	// Instantiate the logical
+	// Instantiate the logical.
 	if (vkCreateDevice(this->m_physicalDevice, &createInfo, 
 					nullptr, &this->m_device) != VK_SUCCESS) {
 		throw std::runtime_error("Error: Logical Device creation has failed!\n");
@@ -208,6 +226,7 @@ void Application::createLogicalDevice()
 	vkGetDeviceQueue(this->m_device, indices.presentFamily.value(), 0,
 			   &this->m_presentQueue);
 }
+// ------------------ End Physical Devices setup ------------------------
 
 // ------------------ Vulkan Messenger Debugger setup ------------------
 
@@ -303,6 +322,37 @@ void Application::destroyDebugUtilsMessengerEXT(
 		func(vkInstance, dbMessenger, pAllocator);
 	}
 }
+// ------------------ End Vulkan Messenger Debugger setup ------------------
+
+// Swapchain
+
+/**
+ * @brief Checks if the device has a graphics cards which can handle with
+ *        the swap chain mechaninsm. So, we need a graphics card capable
+ *        of drawing images and act as FrameBuffer 
+ *        --When an image is been draw, we 1 or more images prepared to
+ *          be called for rendering.
+ *
+ * @param vkDevice Vulkan physical device.
+ * @return true if there is a graphics card capable of handling swap chain mechanism.
+ */
+bool Application::checkDeviceExtensionSupport(VkPhysicalDevice vkDevice)
+{
+	uint32_t extensionCount;
+	vkEnumerateDeviceExtensionProperties(vkDevice, nullptr, &extensionCount, nullptr);
+
+	std::vector<VkExtensionProperties> availableExtensionsVec(extensionCount);
+	vkEnumerateDeviceExtensionProperties(vkDevice, nullptr, &extensionCount, availableExtensionsVec.data());
+
+	std::set<std::string> requiredExtensions(this->m_deviceExtensions.begin(),
+							this->m_deviceExtensions.end());
+
+	for (const auto& extension : availableExtensionsVec) {
+		requiredExtensions.erase(extension.extensionName);
+	}
+
+	return requiredExtensions.empty();
+}
 
 // Getters and setters
 VkInstance Application::getVkInstance()
@@ -310,8 +360,23 @@ VkInstance Application::getVkInstance()
 	return this->m_vkInstance;
 }
 
+VkDevice Application::getDevice()
+{
+	return this->m_device;
+}
+
+VkPhysicalDevice Application::getPhysicalDevice()
+{
+	return this->m_physicalDevice;
+}
+
 VkSurfaceKHR* Application::getVkSurfacePtr()
 {
 	return &this->m_vkSurface;
+}
+
+VkSurfaceKHR Application::getVkSurface()
+{
+	return this->m_vkSurface;
 }
 

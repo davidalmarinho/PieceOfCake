@@ -1,6 +1,7 @@
 add_library(rendering
 	FamilyQueues.cpp
 	Application.cpp
+	SwapChain.cpp
 )
 
 target_include_directories(rendering
