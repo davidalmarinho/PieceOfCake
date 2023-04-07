@@ -27,7 +27,13 @@ class HelloTriangleApplication
         Application *application;
         const u_int32_t m_WIDTH  = 800;
         const u_int32_t m_HEIGHT = 600;
+
+        // TODO: Put these in another file
         VkSwapchainKHR swapChain;
+        std::vector<VkImage> swapChainImages;
+        VkFormat swapChainImageFormat;
+        VkExtent2D swapChainExtent;
+        std::vector<VkImageView> swapChainImageViews;
 
         void initWindow()
         {
@@ -49,6 +55,52 @@ class HelloTriangleApplication
             application->pickPhysicalDevice();
             application->createLogicalDevice();
             createSwapChain();
+            createImageViews();
+        }
+
+        void createImageViews()
+        {
+            // Resize the list to fit all of the image views we’ll be creating
+            swapChainImageViews.resize(swapChainImages.size());
+            for (size_t i = 0; i < swapChainImages.size(); i++) {
+                VkImageViewCreateInfo createInfo{};
+                createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+                createInfo.image = swapChainImages[i];
+
+                /* viewType and format fields specify how the image data should 
+                 * be interpreted. The viewType parameter allows you to treat 
+                 * images as 1D textures, 2D textures, 3D textures and cube maps.
+                 */
+                createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+                createInfo.format   = swapChainImageFormat;
+
+                // Swizzle the image color channels
+                createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+                createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+                createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+                createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+
+                // The subresourceRange field describes what the image’s 
+                // purpose is and which part of the image should be accessed.
+                createInfo.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+                createInfo.subresourceRange.baseMipLevel   = 0;
+                createInfo.subresourceRange.levelCount     = 1;
+                createInfo.subresourceRange.baseArrayLayer = 0;
+                createInfo.subresourceRange.layerCount     = 1;
+
+                /*  _________________________________________________________
+                 * | Note:                                                   |
+                 * | If you were working on a stereographic 3D application,  |
+                 * | then you would create a swap chain with multiple layers.|
+                 * |_________________________________________________________|
+                 */
+                
+                // Create image views
+                if (vkCreateImageView(application->getDevice(), &createInfo, 
+                            nullptr, &swapChainImageViews[i]) != VK_SUCCESS) {
+                    throw std::runtime_error("Error: Failed to create image views!\n");
+                }
+            }
         }
 
         void createSwapChain()
@@ -134,6 +186,12 @@ class HelloTriangleApplication
                 // TODO: Make error handling system
                 throw std::runtime_error("Error: Failed to create swap chain!\n");
             }
+
+            vkGetSwapchainImagesKHR(application->getDevice(), swapChain, &imageCount, nullptr);
+            swapChainImages.resize(imageCount);
+            vkGetSwapchainImagesKHR(application->getDevice(), swapChain, &imageCount, swapChainImages.data());
+            swapChainImageFormat = surfaceFormat.format;
+            swapChainExtent = extent;
         }
 
         void mainLoop() 
@@ -145,6 +203,9 @@ class HelloTriangleApplication
 
         void cleanup() 
         {
+            for (auto imageView : swapChainImageViews) {
+                vkDestroyImageView(application->getDevice(), imageView, nullptr);
+            }
             vkDestroySwapchainKHR(application->getDevice(), this->swapChain, nullptr);
             delete application;
             delete window;
