@@ -1,5 +1,4 @@
 import os
-from os.path import exists
 import sys
 import re
 
@@ -36,12 +35,12 @@ class Colors:
     UNDERLINE = '\033[4m'
 
 def compile_shaders_project():
-    print('-=-=-=-=- Compiling shaders -=-=-=-=-')
+    print('-=-=-=-=- Compiling shaders -=-=-=-=-' + Colors.RED)
     os.chdir(SHADERS_SRC_DIR)
 
     look_for_shaders(SHADERS_SRC_DIR)
     os.chdir(OUTPUT_DIR)
-    print('-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-')
+    print(Colors.END_COLOR + '-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-')
 
 
 def compile_shader(filepath):
@@ -60,7 +59,7 @@ def compile_shader(filepath):
     # Compile shader
     if (os.system(GLSLC_PATH + ' ' + filepath + ' -o ' + compiled_shader_path) == 0):
         # Successful message
-        print(f'{Colors.END_COLOR}-- {Colors.GREEN} > Compiled {Colors.BLUE}{filepath}{Colors.GREEN} shader. {Colors.END_COLOR}')
+        print(f'{Colors.END_COLOR}-- {Colors.GREEN} > Compiled {Colors.BLUE}{filepath}{Colors.GREEN} shader. {Colors.RED}')
         compiled_shader_path_dest = compiled_shader_folder + '/' + compiled_shader_path.rsplit('/', 1)[1]
 
         # Duplicate the same shaders' folder system into the output directory
