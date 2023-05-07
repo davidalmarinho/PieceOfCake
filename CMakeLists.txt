@@ -70,7 +70,7 @@ endif()
 
 # Linux and Mac setting
 if(NOT WIN32)
-  target_compile_options("${PROJECT_NAME}" 
+   target_compile_options("${PROJECT_NAME}" 
     PRIVATE 
     -g
   )
