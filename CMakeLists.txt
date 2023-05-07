@@ -1,12 +1,10 @@
 # Project configuration
 cmake_minimum_required(VERSION 3.10)                                                                          
 project(PieceOfCake)                                                                                     
-      
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_MODULE_PATH "${CMAKE_BINARY_DIR}" "${CMAKE_MODULE_PATH}")                                           
-set(CMAKE_PREFIX_PATH "${CMAKE_BINARY_DIR}" "${CMAKE_PREFIX_PATH}")                                           
-                                                                                                              
+set(CMAKE_PREFIX_PATH "${CMAKE_BINARY_DIR}" "${CMAKE_PREFIX_PATH}")                                                                                                                 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")                                               
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")                                               
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")         
@@ -78,8 +76,14 @@ if(NOT WIN32)
   )
 endif()
 
+# Delete previous binary
+file(REMOVE_RECURSE ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+
+# Copying compiled shaders to bin directory
+file(INSTALL out/shaders DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+
 # add_executable(${PROJECT_NAME} ${SOURCE_FILES})
-                                                                                                             
+
 # TODO: Don't forget to copy the assets folder to the out directory
 #add_custom_target(copy_assets                                                                                
 #    COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/assets" "${CMAKE_LIBRARY_OUTPUT_DIRECTO      RY}/assets"                                                                                                   

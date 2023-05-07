@@ -26,6 +26,7 @@ public:
 	Application();
 	~Application();
 	void vkCreateInfo();
+	void createGraphicsPipeline();
 	bool checkValidationLayerSupport();
 	std::vector<const char*> getRequiredExtensions();
 	
@@ -56,7 +57,10 @@ public:
 
 	// Swapchain
 	bool checkDeviceExtensionSupport(VkPhysicalDevice vkDevice);
-	
+
+	// ------------------ Shaders modules setup ------------------
+	VkShaderModule createShaderModule(const std::vector<char>& code);
+
 	// Getters and setters
 	VkInstance getVkInstance();
 	VkPhysicalDevice getPhysicalDevice();

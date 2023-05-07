@@ -56,6 +56,7 @@ class HelloTriangleApplication
             application->createLogicalDevice();
             createSwapChain();
             createImageViews();
+            application->createGraphicsPipeline();
         }
 
         void createImageViews()
