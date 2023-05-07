@@ -10,10 +10,15 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")         
 # set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "")
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+# Detect architecture
+if (CMAKE_SYSTEM_PROCESSOR MATCHES "(x86)|(X86)")
+    set (X86 TRUE)
+else ()
+    set (X86 FALSE)
+endif ()
 
 # Set color variables
-if(NOT WIN32)
+if(NOT X86)
   string(ASCII 27 Esc)
   set(COLOR_RESET  "${Esc}[m")
   set(COLOR_BOLD   "${Esc}[1m")
@@ -33,14 +38,43 @@ if(NOT WIN32)
   set(BOLD_WHITE   "${Esc}[1;37m")
 endif()
 
+# Windows setting
+if(WIN32)
+  add_definitions(-DGLEW_STATIC)
+  add_definitions(/std:c++17)
+endif()
+  
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+  
 set(SOURCE_FILES main.cpp)
+
+# WIndows setting
+if(WIN32)
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
+endif()
 
 add_subdirectory(src)
 
-target_compile_options("${PROJECT_NAME}" 
-  PRIVATE 
-  -g
-)
+# Windows setting
+if(WIN32)
+  set_property(TARGET ${CMAKE_PROJECT_NAME} PROPERTY
+    MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
+  # TODO: Doesn't know if this works in x86 architecture. Test in x86 architecture is needed.
+  if(X86)
+    set(VCPKG_TARGET_TRIPLET "x86-windows-static")
+  else()
+    set(VCPKG_TARGET_TRIPLET "x64-windows-static")
+  endif()
+endif()
+
+# Linux and Mac setting
+if(NOT WIN32)
+  target_compile_options("${PROJECT_NAME}" 
+    PRIVATE 
+    -g
+  )
+endif()
 
 # Delete previous binary
 file(REMOVE_RECURSE ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})

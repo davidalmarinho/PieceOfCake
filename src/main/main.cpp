@@ -25,8 +25,8 @@ class HelloTriangleApplication
     private:
         Window *window;
         Application *application;
-        const u_int32_t m_WIDTH  = 800;
-        const u_int32_t m_HEIGHT = 600;
+        const uint32_t m_WIDTH  = 800;
+        const uint32_t m_HEIGHT = 600;
 
         // TODO: Put these in another file
         VkSwapchainKHR swapChain;
