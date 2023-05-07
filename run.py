@@ -1,6 +1,4 @@
-import os
-import sys
-import re
+import os, sys, re, shutil
 
 # Global variables
 WORKING_DIR = os.getcwd()
@@ -35,6 +33,9 @@ class Colors:
     UNDERLINE = '\033[4m'
 
 def compile_shaders_project():
+    # Firstly, let's clean others already compilled shaders.
+    clean_shaders_compilation()
+
     print('-=-=-=-=- Compiling shaders -=-=-=-=-' + Colors.RED)
     os.chdir(SHADERS_SRC_DIR)
 
@@ -42,6 +43,15 @@ def compile_shaders_project():
     os.chdir(OUTPUT_DIR)
     print(Colors.END_COLOR + '-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-')
 
+def clean_shaders_compilation():
+    compile_shaders_path = SHADERS_COMPILED_FOLDER
+    print(compile_shaders_path)
+    for files in os.listdir(compile_shaders_path):
+        path = os.path.join(compile_shaders_path, files)
+        try:
+            shutil.rmtree(path)
+        except OSError:
+            os.remove(path)
 
 def compile_shader(filepath):
     """
@@ -50,7 +60,7 @@ def compile_shader(filepath):
 
     :param filename: File's path.
     """
-    
+
     # Get the folder of where the current shader is located
     compiled_shader_folder = OUTPUT_DIR + '/' + SHADERS_NAME_DIR + filepath.split(SHADERS_NAME_DIR)[1].rsplit('/', 1)[0]
     # Generate compilled shader name --just changing its extension.
@@ -64,7 +74,7 @@ def compile_shader(filepath):
 
         # Duplicate the same shaders' folder system into the output directory
         if (not os.path.exists(compiled_shader_folder)):
-             os.mkdir(compiled_shader_folder)
+            os.mkdir(compiled_shader_folder)
 
         # Move compiled shader file to the output directory
         os.rename(compiled_shader_path, compiled_shader_path_dest)

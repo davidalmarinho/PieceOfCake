@@ -11,6 +11,7 @@
 #include "Application.hpp"
 #include "FamilyQueues.hpp"
 #include "SwapChain.hpp"
+#include "AssetPool.hpp"
 
 #ifdef NDEBUG
 Application::Application() : m_validationLayers(1, "VK_LAYER_KHRONOS_validation"), 
@@ -81,6 +82,37 @@ void Application::vkCreateInfo()
 	if (vkCreateInstance(&createInfo, nullptr, &m_vkInstance) != VK_SUCCESS) {
 		throw std::runtime_error("Error: Couldn't create VkInstance");
 	}
+}
+
+void Application::createGraphicsPipeline()
+{
+    auto vertShaderCode = AssetPool::readFile("shaders/triangle_vertex_shader.spv");
+    auto fragShaderCode = AssetPool::readFile("shaders/triangle_fragment_shader.spv");
+
+	// Create shaders' modules
+    VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
+    VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
+
+	VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
+	vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO; // Tells Vulkan in which pipeline stage the shader is going to be used.
+	vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT; 
+	// Defines entry point
+	vertShaderStageInfo.module = vertShaderModule;
+	vertShaderStageInfo.pName = "main";
+	vertShaderStageInfo.pSpecializationInfo = nullptr; // Shader filled with just constant
+	
+	VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
+	fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+	fragShaderStageInfo.module = fragShaderModule;
+	fragShaderStageInfo.pName = "main";
+	fragShaderStageInfo.pSpecializationInfo = nullptr;
+
+	VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
+
+	// Clean shaders' modules
+	vkDestroyShaderModule(this->m_device, fragShaderModule, nullptr);
+	vkDestroyShaderModule(this->m_device, vertShaderModule, nullptr);
 }
 
 bool Application::checkValidationLayerSupport() {
@@ -353,6 +385,32 @@ bool Application::checkDeviceExtensionSupport(VkPhysicalDevice vkDevice)
 
 	return requiredExtensions.empty();
 }
+
+
+// ------------------ Shaders modules setup ------------------
+/**
+ * @brief Create VkShaderModule object so the program is able to pass
+ * shaders' code to the pipeline.
+ *
+ * @param code 
+ * @return 
+ */
+VkShaderModule Application::createShaderModule(const std::vector<char>& code)
+{
+    VkShaderModuleCreateInfo createInfo{};
+    createInfo.codeSize = code.size();
+    createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
+
+    // Create VkShaderModule
+    VkShaderModule shaderModule;
+    if (vkCreateShaderModule(this->m_device, &createInfo, 
+			     nullptr, &shaderModule) != VK_SUCCESS) {
+	throw std::runtime_error("Failed to create shader module!\n");
+    }
+
+    return shaderModule;
+}
+// ------------------ End Shaders modules setup ------------------
 
 // Getters and setters
 VkInstance Application::getVkInstance()
