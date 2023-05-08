@@ -21,6 +21,8 @@ private:
 	const std::vector<const char*> m_deviceExtensions;
 
 	VkDebugUtilsMessengerEXT m_debugMessenger;
+	
+	VkPipelineLayout m_pipelineLayout;
 
 public:
 	Application();
@@ -67,5 +69,6 @@ public:
 	VkDevice getDevice();
 	VkSurfaceKHR getVkSurface();
 	VkSurfaceKHR* getVkSurfacePtr();
+	VkPipelineLayout getPipelineLayout();
 };
 

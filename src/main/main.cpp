@@ -204,6 +204,7 @@ class HelloTriangleApplication
 
         void cleanup() 
         {
+            vkDestroyPipelineLayout(application->getDevice(), application->getPipelineLayout(), nullptr);
             for (auto imageView : swapChainImageViews) {
                 vkDestroyImageView(application->getDevice(), imageView, nullptr);
             }
