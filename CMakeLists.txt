@@ -1,5 +1,5 @@
 # Project configuration
-cmake_minimum_required(VERSION 3.10)                                                                          
+cmake_minimum_required(VERSION 3.20)                                                                          
 project(PieceOfCake)                                                                                     
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -10,15 +10,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")         
 # set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "")
 
-# Detect architecture
-if (CMAKE_SYSTEM_PROCESSOR MATCHES "(x86)|(X86)")
-    set (X86 TRUE)
-else ()
-    set (X86 FALSE)
-endif ()
-
 # Set color variables
-if(NOT X86)
   string(ASCII 27 Esc)
   set(COLOR_RESET  "${Esc}[m")
   set(COLOR_BOLD   "${Esc}[1m")
@@ -36,7 +28,6 @@ if(NOT X86)
   set(BOLD_MAGENTA "${Esc}[1;35m")
   set(BOLD_CYAN    "${Esc}[1;36m")
   set(BOLD_WHITE   "${Esc}[1;37m")
-endif()
 
 # Windows setting
 if(WIN32)
@@ -57,20 +48,20 @@ add_subdirectory(src)
 
 # Windows setting
 if(WIN32)
-  set_property(TARGET ${CMAKE_PROJECT_NAME} PROPERTY
-    MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+  # set_property(TARGET ${CMAKE_PROJECT_NAME} PROPERTY
+  #  MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
-  # TODO: Doesn't know if this works in x86 architecture. Test in x86 architecture is needed.
-  if(X86)
-    set(VCPKG_TARGET_TRIPLET "x86-windows-static")
-  else()
-    set(VCPKG_TARGET_TRIPLET "x64-windows-static")
-  endif()
+  # TODO: Not working. Test in x86 architecture is needed.
+  #if(X86)
+  #  set(VCPKG_TARGET_TRIPLET "x86-windows-static")
+  #else()
+  #  set(VCPKG_TARGET_TRIPLET "x64-windows-static")
+  #endif()
 endif()
 
 # Linux and Mac setting
 if(NOT WIN32)
-  target_compile_options("${PROJECT_NAME}" 
+   target_compile_options("${PROJECT_NAME}" 
     PRIVATE 
     -g
   )
@@ -79,8 +70,18 @@ endif()
 # Delete previous binary
 file(REMOVE_RECURSE ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 
+message("${CYAN}> Running in ${CMAKE_BUILD_TYPE} mode.${COLOR_RESET}")
+
 # Copying compiled shaders to bin directory
-file(INSTALL out/shaders DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+if(WIN32)
+  if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    file(INSTALL out/shaders DESTINATION "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Debug")
+  else()
+    file(INSTALL out/shaders DESTINATION "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Release")
+  endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
+else()
+  file(INSTALL out/shaders DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+endif(WIN32)
 
 # add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 
