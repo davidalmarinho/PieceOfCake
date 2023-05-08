@@ -24,11 +24,13 @@ private:
 	
 	VkPipelineLayout m_pipelineLayout;
 
+	VkPipeline m_graphicsPipeline;
+
 public:
 	Application();
 	~Application();
 	void vkCreateInfo();
-	void createGraphicsPipeline();
+	void createGraphicsPipeline(VkRenderPass renderPass);
 	bool checkValidationLayerSupport();
 	std::vector<const char*> getRequiredExtensions();
 	
@@ -70,5 +72,6 @@ public:
 	VkSurfaceKHR getVkSurface();
 	VkSurfaceKHR* getVkSurfacePtr();
 	VkPipelineLayout getPipelineLayout();
+	VkPipeline getGraphicsPipeline();
 };
 

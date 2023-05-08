@@ -84,7 +84,7 @@ void Application::vkCreateInfo()
 	}
 }
 
-void Application::createGraphicsPipeline()
+void Application::createGraphicsPipeline(VkRenderPass renderPass)
 {
 	auto vertShaderCode = AssetPool::readFile("shaders/triangle_vertex_shader.spv");
 	auto fragShaderCode = AssetPool::readFile("shaders/triangle_fragment_shader.spv");
@@ -185,6 +185,17 @@ void Application::createGraphicsPipeline()
 	colorBlending.blendConstants[2] = 0.0f;
 	colorBlending.blendConstants[3] = 0.0f;
 
+	// Dynamic State
+	std::vector<VkDynamicState> dynamicStates = {
+		VK_DYNAMIC_STATE_VIEWPORT,
+		VK_DYNAMIC_STATE_SCISSOR
+	};
+
+	VkPipelineDynamicStateCreateInfo dynamicState{};
+	dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+	dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
+	dynamicState.pDynamicStates = dynamicStates.data();
+
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	pipelineLayoutInfo.setLayoutCount         = 0; 
@@ -198,16 +209,31 @@ void Application::createGraphicsPipeline()
 		throw std::runtime_error("Error: Failed to create pipeline layout.");
 	}
 
-	// Dynamic State
-	std::vector<VkDynamicState> dynamicStates = {
-		VK_DYNAMIC_STATE_VIEWPORT,
-		VK_DYNAMIC_STATE_SCISSOR
-	};
+	VkGraphicsPipelineCreateInfo pipelineInfo{};
+	pipelineInfo.sType      = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+	pipelineInfo.stageCount = 2;
+	pipelineInfo.pStages    = shaderStages;
 
-	VkPipelineDynamicStateCreateInfo dynamicState{};
-	dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-	dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
-	dynamicState.pDynamicStates = dynamicStates.data();
+	pipelineInfo.pVertexInputState   = &vertexInputInfo;
+	pipelineInfo.pInputAssemblyState = &inputAssembly;
+	pipelineInfo.pViewportState      = &viewportState;
+	pipelineInfo.pRasterizationState = &rasterizer;
+	pipelineInfo.pMultisampleState   = &multisampling;
+	pipelineInfo.pDepthStencilState  = nullptr;
+	pipelineInfo.pColorBlendState    = &colorBlending;
+	pipelineInfo.pDynamicState       = &dynamicState;
+
+	pipelineInfo.layout = this->m_pipelineLayout;
+
+	pipelineInfo.renderPass = renderPass;
+	pipelineInfo.subpass    = 0;
+
+	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+	pipelineInfo.basePipelineIndex = -1;
+
+	if (vkCreateGraphicsPipelines(this->m_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &(this->m_graphicsPipeline)) != VK_SUCCESS) {
+    throw std::runtime_error("Error: Failed to create graphics pipeline.\n");
+}
 
 	// Clean shaders' modules
 	vkDestroyShaderModule(this->m_device, fragShaderModule, nullptr);
@@ -497,6 +523,7 @@ bool Application::checkDeviceExtensionSupport(VkPhysicalDevice vkDevice)
 VkShaderModule Application::createShaderModule(const std::vector<char>& code)
 {
     VkShaderModuleCreateInfo createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     createInfo.codeSize = code.size();
     createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
 
@@ -504,7 +531,7 @@ VkShaderModule Application::createShaderModule(const std::vector<char>& code)
     VkShaderModule shaderModule;
     if (vkCreateShaderModule(this->m_device, &createInfo, 
 			     nullptr, &shaderModule) != VK_SUCCESS) {
-	throw std::runtime_error("Failed to create shader module!\n");
+		throw std::runtime_error("Failed to create shader module!\n");
     }
 
     return shaderModule;
@@ -540,5 +567,10 @@ VkSurfaceKHR Application::getVkSurface()
 VkPipelineLayout Application::getPipelineLayout()
 {
 	return this->m_pipelineLayout;
+}
+
+VkPipeline Application::getGraphicsPipeline()
+{
+	return this->m_graphicsPipeline;
 }
 

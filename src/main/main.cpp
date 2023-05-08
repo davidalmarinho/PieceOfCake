@@ -34,6 +34,7 @@ class HelloTriangleApplication
         VkFormat swapChainImageFormat;
         VkExtent2D swapChainExtent;
         std::vector<VkImageView> swapChainImageViews;
+        VkRenderPass m_renderPass;
 
         void initWindow()
         {
@@ -56,7 +57,8 @@ class HelloTriangleApplication
             application->createLogicalDevice();
             createSwapChain();
             createImageViews();
-            application->createGraphicsPipeline();
+            createRenderPass();
+            application->createGraphicsPipeline(this->m_renderPass);
         }
 
         void createImageViews()
@@ -101,6 +103,42 @@ class HelloTriangleApplication
                             nullptr, &swapChainImageViews[i]) != VK_SUCCESS) {
                     throw std::runtime_error("Error: Failed to create image views!\n");
                 }
+            }
+        }
+        void createRenderPass()
+        {
+        	VkAttachmentDescription colorAttachment{};
+        	colorAttachment.format = swapChainImageFormat;
+        	colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+        
+        	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        
+        	colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        
+        	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; // Specifies which layout the image will have before the render pass begins.
+        	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR; // Specifies the layout to automatically transition to when the render pass finishes.
+            
+            VkAttachmentReference colorAttachmentRef{};
+            colorAttachmentRef.attachment = 0; // Specifies which attachment to reference by its index in the attachment descriptions array.
+            colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; // Specifies which layout we would like the attachment to have during a subpass that uses this reference.
+            
+            VkSubpassDescription subpass{};
+            subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+
+            subpass.colorAttachmentCount = 1; // The index of the attachment in this array is directly referenced from the fragment shader with the layout(location = 0) out vec4 outColor directive.
+            subpass.pColorAttachments = &colorAttachmentRef;
+
+            VkRenderPassCreateInfo renderPassInfo{};
+            renderPassInfo.sType           = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+            renderPassInfo.attachmentCount = 1;
+            renderPassInfo.pAttachments    = &colorAttachment;
+            renderPassInfo.subpassCount    = 1;
+            renderPassInfo.pSubpasses      = &subpass;
+            
+            if (vkCreateRenderPass(application->getDevice(), &renderPassInfo, nullptr, &(this->m_renderPass)) != VK_SUCCESS) {
+                throw std::runtime_error("Failed to create the render pass.\n");
             }
         }
 
@@ -204,7 +242,9 @@ class HelloTriangleApplication
 
         void cleanup() 
         {
+            vkDestroyPipeline(application->getDevice(), application->getGraphicsPipeline(), nullptr);
             vkDestroyPipelineLayout(application->getDevice(), application->getPipelineLayout(), nullptr);
+            vkDestroyRenderPass(application->getDevice(), this->m_renderPass, nullptr);
             for (auto imageView : swapChainImageViews) {
                 vkDestroyImageView(application->getDevice(), imageView, nullptr);
             }
