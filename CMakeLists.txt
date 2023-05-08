@@ -10,15 +10,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")         
 # set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "")
 
-# Detect architecture
-if (CMAKE_SYSTEM_PROCESSOR MATCHES "(x86)|(X86)")
-    set (X86 TRUE)
-else ()
-    set (X86 FALSE)
-endif ()
-
 # Set color variables
-if(NOT X86)
   string(ASCII 27 Esc)
   set(COLOR_RESET  "${Esc}[m")
   set(COLOR_BOLD   "${Esc}[1m")
@@ -36,7 +28,6 @@ if(NOT X86)
   set(BOLD_MAGENTA "${Esc}[1;35m")
   set(BOLD_CYAN    "${Esc}[1;36m")
   set(BOLD_WHITE   "${Esc}[1;37m")
-endif()
 
 # Windows setting
 if(WIN32)
@@ -60,12 +51,12 @@ if(WIN32)
   # set_property(TARGET ${CMAKE_PROJECT_NAME} PROPERTY
   #  MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
-  # TODO: Doesn't know if this works in x86 architecture. Test in x86 architecture is needed.
-  if(X86)
-    set(VCPKG_TARGET_TRIPLET "x86-windows-static")
-  else()
-    set(VCPKG_TARGET_TRIPLET "x64-windows-static")
-  endif()
+  # TODO: Not working. Test in x86 architecture is needed.
+  #if(X86)
+  #  set(VCPKG_TARGET_TRIPLET "x86-windows-static")
+  #else()
+  #  set(VCPKG_TARGET_TRIPLET "x64-windows-static")
+  #endif()
 endif()
 
 # Linux and Mac setting

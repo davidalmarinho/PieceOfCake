@@ -48,7 +48,6 @@ def compile_shaders_project():
 
 def clean_shaders_compilation():
     compile_shaders_path = SHADERS_COMPILED_FOLDER
-    print(compile_shaders_path)
     for files in os.listdir(compile_shaders_path):
         path = os.path.join(compile_shaders_path, files)
         try:
@@ -145,7 +144,6 @@ def load_config_file():
                 GLSLC_PATH = str(navigator[0])
             elif i == 4:
                 global VCPKG_PATH
-                print(VCPKG_PATH)
                 VCPKG_PATH = str(navigator[0])
             
             i += 1
