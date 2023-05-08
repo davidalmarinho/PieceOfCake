@@ -4,21 +4,21 @@ add_library(rendering
 	SwapChain.cpp
 )
 
-#find_package(Vulkan REQUIRED)
-#find_package(glfw3 3.2 REQUIRED)
+find_package(Vulkan REQUIRED)
+find_package(glfw3 3.2 REQUIRED)
 
 target_include_directories(rendering
 	PRIVATE
 	"${PROJECT_SOURCE_DIR}/include/rendering/"
 	"${PROJECT_SOURCE_DIR}/include/utils/"
 
-#	glfw
-#	Vulkan::Vulkan
+	glfw
+	Vulkan::Vulkan
 )
 
-#target_link_libraries(rendering
-#	Vulkan::Vulkan
-#	glfw 
-#)
+target_link_libraries(rendering
+	Vulkan::Vulkan
+	glfw 
+)
 
 add_subdirectory(window)

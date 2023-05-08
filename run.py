@@ -1,7 +1,7 @@
 import os, sys, re, shutil
 
 # Global variables
-WORKING_DIR = os.getcwd()
+WORKING_DIR = os.getcwd().replace('\\', '/')
 OUTPUT_DIR  = WORKING_DIR + '/out'
 CONFIG_FILE_NAME = 'starter.cfg'
 SHADERS_NAME_DIR = 'shaders'
@@ -9,19 +9,22 @@ SHADERS_COMPILED_FOLDER = OUTPUT_DIR + '/' + SHADERS_NAME_DIR
 SHADERS_SRC_DIR = WORKING_DIR + '/' + SHADERS_NAME_DIR
 
 HELP = '''
+    Commands:
     --build
     --run
     --help
 
     config --prj_name 'ProjectNameExample'
     config --release ON
-    config --mem_check ON
+    config --mem_check OFF
     config --glslc_path '/usr/bin/glslc'
+    config --vcpkg_path 'D:/Softwares/vcpackage/vcpkg/scripts/buildsystems/vcpkg.cmake'
 '''
 PRJ_NAME   = 'Default project name'
 MEM_CHECK  = False
 DEBUG      = True
 GLSLC_PATH = 'No Path'
+VCPKG_PATH = 'No Path'
 
 class Colors:
     GREEN     = '\033[92m'
@@ -81,7 +84,8 @@ def compile_shader(filepath):
 
 def look_for_shaders(path):
     for dir in os.listdir():
-        next_file = os.path.join(path, dir)
+        next_file = os.path.join(path, dir).replace('\\', '/')
+
         # Compile shader
         if os.path.isfile(next_file):
             compile_shader(next_file)
@@ -106,11 +110,12 @@ def move_file(file_path, new_path):
 
 def save_config():
     file_config = open(CONFIG_FILE_NAME, 'w')
-    file_config.write('Project name:' + PRJ_NAME + ';\n')
+    file_config.write('Project name=' + PRJ_NAME + ';\n')
     release = not DEBUG
-    file_config.write('Release:' + str(release) + ';\n')
-    file_config.write('Memory checking:' + str(MEM_CHECK) + ';\n')
-    file_config.write('GLSLC path application:' + GLSLC_PATH + ';\n')
+    file_config.write('Release=' + str(release) + ';\n')
+    file_config.write('Memory checking=' + str(MEM_CHECK) + ';\n')
+    file_config.write('GLSLC path application=' + GLSLC_PATH + ';\n')
+    file_config.write('Cmake vcpkg path=' + VCPKG_PATH + ';\n')
     file_config.close()
 
 def boolean(text):
@@ -124,7 +129,7 @@ def load_config_file():
         i = 0
         for line in file_config:
             #print(line)
-            navigator = re.split(';', re.split(':', line)[1])
+            navigator = re.split(';', re.split('=', line)[1])
             
             if i == 0:
                 global PRJ_NAME
@@ -138,6 +143,10 @@ def load_config_file():
             elif i == 3:
                 global GLSLC_PATH
                 GLSLC_PATH = str(navigator[0])
+            elif i == 4:
+                global VCPKG_PATH
+                print(VCPKG_PATH)
+                VCPKG_PATH = str(navigator[0])
             
             i += 1
 
@@ -152,17 +161,28 @@ def build_program():
     # Compile shaders
     compile_shaders_project()
 
-    if DEBUG:
-        os.system('cmake -DCMAKE_BUILD_TYPE=Debug ..')
+    if is_windows():
+        if DEBUG:
+            os.system('cmake .. -DCMAKE_TOOLCHAIN_FILE=' + VCPKG_PATH + ' -DCMAKE_BUILD_TYPE=Debug')
+        else:
+            os.system('cmake .. -DCMAKE_TOOLCHAIN_FILE=' + VCPKG_PATH + ' -DCMAKE_BUILD_TYPE=Release')
     else:
-        os.system('cmake -DCMAKE_BUILD_TYPE=Release ..')
+        if DEBUG:
+            os.system('cmake -DCMAKE_BUILD_TYPE=Debug ..')
+        else:
+            os.system('cmake -DCMAKE_BUILD_TYPE=Release ..')
 
     # Check for compile_commands.json file and move it to sources directory
     compile_commands = OUTPUT_DIR + '/compile_commands.json'
     if exists_file(compile_commands):
         move_file(compile_commands, WORKING_DIR + '/compile_commands.json')
 
-    if is_linux():
+    if is_windows():
+        if DEBUG:
+            os.system('msbuild ' + PRJ_NAME + '.sln /property:Configuration=Debug')
+        else:
+            os.system('msbuild ' + PRJ_NAME + '.sln /property:Configuration=Release')
+    else:
         os.system('make')
 
 
@@ -176,7 +196,14 @@ def run_program():
    #      return
 
     if not MEM_CHECK:
-        os.system('./' + PRJ_NAME)
+        if is_windows():
+            if DEBUG:
+                os.chdir('Debug')
+            else:
+                os.chdir('Release')
+            os.system(PRJ_NAME)
+        else:
+            os.system('./' + PRJ_NAME)
     else:
         # 	#valgrind --leak-check=full \
         # --show-leak-kinds=all \
@@ -192,28 +219,31 @@ def run_program():
 def handle_user_option(args):
     num_args = len(args)
     if num_args == 4:
-        arg1 = [1]
-        arg2 = [2]
-        arg3 = [3]
-        if arg1.__eq__('config'):
-            if arg2.__eq__('--mem_check'):
-                if arg3.__eq__('ON'):
+        arg1 = args[1]
+        arg2 = args[2]
+        arg3 = args[3]
+        if arg1 == 'config':
+            if arg2 == '--mem_check':
+                if arg3 == 'ON':
                     global MEM_CHECK
                     MEM_CHECK = True
-                elif arg3.__eq__('OFF'):
+                elif arg3 == 'OFF':
                     MEM_CHECK = False
-            elif arg2.__eq__('--prj_name'):
+            elif arg2 == '--prj_name':
                 global PRJ_NAME
                 PRJ_NAME = arg3
-            elif arg2.__eq__('--release'):
-                if arg3.__eq__('ON'):
+            elif arg2 == '--release':
+                if arg3 == 'ON':
                     global DEBUG
                     DEBUG = False
-                elif arg3.__eq__('OFF'):
+                elif arg3 == 'OFF':
                     DEBUG = True
-            elif arg2.__eq__('--glslc_path'):
+            elif arg2 == '--glslc_path':
                 global GLSLC_PATH
                 GLSLC_PATH = arg3
+            elif arg2 == '--vcpkg_path':
+                global VCPKG_PATH
+                VCPKG_PATH = arg3
 
         save_config()
     elif num_args == 2 and sys.argv[1] == '--gen_conf':
@@ -224,7 +254,6 @@ def handle_user_option(args):
 
     # Handle your C++ program :)
     if num_args == 1:
-        # TODO: Print help
         print(HELP)
     elif num_args == 2:
         arg = sys.argv[1]

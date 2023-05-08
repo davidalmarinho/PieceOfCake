@@ -1,5 +1,5 @@
 # Project configuration
-cmake_minimum_required(VERSION 3.10)                                                                          
+cmake_minimum_required(VERSION 3.20)                                                                          
 project(PieceOfCake)                                                                                     
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -57,8 +57,8 @@ add_subdirectory(src)
 
 # Windows setting
 if(WIN32)
-  set_property(TARGET ${CMAKE_PROJECT_NAME} PROPERTY
-    MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+  # set_property(TARGET ${CMAKE_PROJECT_NAME} PROPERTY
+  #  MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
   # TODO: Doesn't know if this works in x86 architecture. Test in x86 architecture is needed.
   if(X86)
@@ -79,8 +79,18 @@ endif()
 # Delete previous binary
 file(REMOVE_RECURSE ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 
+message("${CYAN}> Running in ${CMAKE_BUILD_TYPE} mode.${COLOR_RESET}")
+
 # Copying compiled shaders to bin directory
-file(INSTALL out/shaders DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+if(WIN32)
+  if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    file(INSTALL out/shaders DESTINATION "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Debug")
+  else()
+    file(INSTALL out/shaders DESTINATION "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Release")
+  endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
+else()
+  file(INSTALL out/shaders DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+endif(WIN32)
 
 # add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 
