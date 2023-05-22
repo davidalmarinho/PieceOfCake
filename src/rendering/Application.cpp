@@ -380,6 +380,7 @@ void Application::createLogicalDevice()
 	}
 
 	// Retrieve queue handles for each queue family
+	vkGetDeviceQueue(this->m_device, indices.graphicsFamily.value(), 0, &this->m_graphicsQueue);
 	vkGetDeviceQueue(this->m_device, indices.presentFamily.value(), 0,
 			   &this->m_presentQueue);
 }
@@ -572,5 +573,15 @@ VkPipelineLayout Application::getPipelineLayout()
 VkPipeline Application::getGraphicsPipeline()
 {
 	return this->m_graphicsPipeline;
+}
+
+VkQueue Application::getGraphicsQueue()
+{
+	return this->m_graphicsQueue;
+}
+
+VkQueue Application::getPresentQueue()
+{
+	return this->m_presentQueue;
 }
 

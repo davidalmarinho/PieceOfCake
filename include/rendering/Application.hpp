@@ -73,5 +73,7 @@ public:
 	VkSurfaceKHR* getVkSurfacePtr();
 	VkPipelineLayout getPipelineLayout();
 	VkPipeline getGraphicsPipeline();
+	VkQueue getGraphicsQueue();
+	VkQueue getPresentQueue();
 };
 
