@@ -33,6 +33,11 @@ if(WIN32)
   add_definitions(-DGLEW_STATIC)
   add_definitions(/std:c++17)
 endif()
+
+if(DEFINED ENV{VCPKG_ROOT} AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
+    message(STATUS "Using vcpkg")
+    set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
+endif()
   
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
   
@@ -47,7 +52,7 @@ add_subdirectory(src)
 
 # Windows setting
 if(WIN32)
-  # set_property(TARGET ${CMAKE_PROJECT_NAME} PROPERTY
+  # set_property(TARGET ${CMAKE_PROJECT_NAME} PROPERTY)
   #  MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
   # TODO: Not working. Test in x86 architecture is needed.
@@ -71,16 +76,19 @@ file(REMOVE_RECURSE ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 
 message("${CYAN}> Running in ${CMAKE_BUILD_TYPE} mode.${COLOR_RESET}")
 
+# With msbuild
 # Copying compiled shaders to bin directory
-if(WIN32)
-  if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    file(INSTALL out/shaders DESTINATION "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Debug")
-  else()
-    file(INSTALL out/shaders DESTINATION "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Release")
-  endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
-else()
-  file(INSTALL out/shaders DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-endif(WIN32)
+#if(WIN32)
+#  if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+#    file(INSTALL out/shaders DESTINATION "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Debug")
+#  else()
+#    file(INSTALL out/shaders DESTINATION "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Release")
+#  endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
+#else()
+#    file(INSTALL out/shaders DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+#endif(WIN32)
+
+file(INSTALL out/shaders DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 
 # add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 

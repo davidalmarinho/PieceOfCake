@@ -12,6 +12,12 @@ sudo apt-get install libglfw3-dev
 sudo apt-get install libglew-dev
 ```
 
+```console
+    WINDOWS:
+    pip install compiledb
+    vcpkg install libigl[glfw]
+```
+
 ## Include Configuration
 
 If working on vscode, add this configuration to c_cpp_propertis.json file:

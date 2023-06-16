@@ -106,6 +106,9 @@ def exists_file(path_file):
 
 def move_file(file_path, new_path):
     os.rename(file_path, new_path)
+    
+def replace_file(file_path, new_path):
+    os.replace(file_path, new_path)
 
 def save_config():
     file_config = open(CONFIG_FILE_NAME, 'w')
@@ -161,9 +164,15 @@ def build_program():
 
     if is_windows():
         if DEBUG:
-            os.system('cmake .. -DCMAKE_TOOLCHAIN_FILE=' + VCPKG_PATH + ' -DCMAKE_BUILD_TYPE=Debug')
+            # With msbuild
+            # os.system('cmake .. -DCMAKE_TOOLCHAIN_FILE=' + VCPKG_PATH + ' -DCMAKE_BUILD_TYPE=Debug')
+            # With nmake
+            os.system('cmake -G "NMake Makefiles" .. -DCMAKE_TOOLCHAIN_FILE=' + VCPKG_PATH + ' -DCMAKE_BUILD_TYPE=Debug')
         else:
-            os.system('cmake .. -DCMAKE_TOOLCHAIN_FILE=' + VCPKG_PATH + ' -DCMAKE_BUILD_TYPE=Release')
+            # With msbuild
+            # os.system('cmake .. -DCMAKE_TOOLCHAIN_FILE=' + VCPKG_PATH + ' -DCMAKE_BUILD_TYPE=Release')
+            # With nmake
+            os.system('cmake -G "NMake Makefiles" .. -DCMAKE_TOOLCHAIN_FILE=' + VCPKG_PATH + ' -DCMAKE_BUILD_TYPE=Release')
     else:
         if DEBUG:
             os.system('cmake -DCMAKE_BUILD_TYPE=Debug ..')
@@ -173,15 +182,28 @@ def build_program():
     # Check for compile_commands.json file and move it to sources directory
     compile_commands = OUTPUT_DIR + '/compile_commands.json'
     if exists_file(compile_commands):
-        move_file(compile_commands, WORKING_DIR + '/compile_commands.json')
+        target_replace_compile_commands_path = WORKING_DIR + '/compile_commands.json'
+        if exists_file(target_replace_compile_commands_path):
+            replace_file(compile_commands, target_replace_compile_commands_path)
+        else:
+            move_file(compile_commands, target_replace_compile_commands_path)
+    else:
+        print(Colors.RED + "Error: Couldn't find " + compile_commands + " file." + Colors.END_COLOR)
 
     if is_windows():
-        if DEBUG:
-            os.system('msbuild ' + PRJ_NAME + '.sln /property:Configuration=Debug')
-        else:
-            os.system('msbuild ' + PRJ_NAME + '.sln /property:Configuration=Release')
+        # With nmake
+        os.system('nmake')
+        
+        # With msbuild
+        #if DEBUG:
+            # With msbuild
+            # os.system('msbuild ' + PRJ_NAME + '.sln /property:Configuration=Debug')
+        #else:
+            # With msbuild
+            # os.system('msbuild ' + PRJ_NAME + '.sln /property:Configuration=Release')
     else:
         os.system('make')
+    
 
 
 def run_program():
@@ -195,11 +217,12 @@ def run_program():
 
     if not MEM_CHECK:
         if is_windows():
-            if DEBUG:
-                os.chdir('Debug')
-            else:
-                os.chdir('Release')
             os.system(PRJ_NAME)
+        #    if DEBUG:
+        #        os.chdir('Debug')
+        #    else:
+        #        os.chdir('Release')
+        #    os.system(PRJ_NAME)
         else:
             os.system('./' + PRJ_NAME)
     else:
