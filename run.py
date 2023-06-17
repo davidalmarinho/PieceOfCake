@@ -152,6 +152,8 @@ def load_config_file():
             i += 1
 
 def build_program():
+    success = True
+    
     # Create out and shaders directories if they doesn't exist
     if not exists_file(OUTPUT_DIR):
         os.mkdir(OUTPUT_DIR)
@@ -192,7 +194,7 @@ def build_program():
 
     if is_windows():
         # With nmake
-        os.system('nmake')
+        success = os.system('nmake')
         
         # With msbuild
         #if DEBUG:
@@ -202,7 +204,9 @@ def build_program():
             # With msbuild
             # os.system('msbuild ' + PRJ_NAME + '.sln /property:Configuration=Release')
     else:
-        os.system('make')
+        success = os.system('make')
+        
+    return success == 0
     
 
 
@@ -279,8 +283,8 @@ def handle_user_option(args):
     elif num_args == 2:
         arg = sys.argv[1]
         if arg.__eq__('--run'):
-            build_program()
-            run_program()
+            if build_program():
+                run_program()
         elif arg.__eq__('--build'):
             build_program()
         else:
