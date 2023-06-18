@@ -13,7 +13,11 @@ class Window
 		uint32_t m_width  = 800;
 		uint32_t m_height = 600;
 
+		static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
+
 	public:
+		bool framebufferResized = false;
+
 		Window(const char *title, int width, int height);
 		~Window();
 		void init();
