@@ -1,7 +1,8 @@
 #include "AssetPool.hpp"
-#include "Compare.hpp"
 #include <iostream>
 #include <fstream>
+
+// TODO: Make this a file's "database" manager.
 
 //void AssetPool::addShader(const std::string shaderPath)
 //{

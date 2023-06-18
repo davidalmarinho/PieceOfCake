@@ -1,5 +1,4 @@
 add_library(utils
-	Compare.cpp
 	AssetPool.cpp
 )
 

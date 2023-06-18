@@ -1,7 +1,6 @@
 #pragma once
 
-#include "Application.hpp"
-
+#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <cstdlib>
 #include <vulkan/vulkan.h>
@@ -15,10 +14,11 @@ class Window
 		uint32_t m_height = 600;
 
 	public:
-		Window(const char *t_title, int t_width, int t_height);
+		Window(const char *title, int width, int height);
 		~Window();
 		void init();
-		void createSurface(Application *app);
+		void createSurface(VkInstance vkInstance, VkSurfaceKHR* vkSurfaceKHR);
 
 		GLFWwindow *getGlfwWindow();
+		bool isReadyToClose();
 };

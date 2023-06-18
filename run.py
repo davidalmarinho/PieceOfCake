@@ -152,7 +152,7 @@ def load_config_file():
             i += 1
 
 def build_program():
-    success = True
+    success = 0
     
     # Create out and shaders directories if they doesn't exist
     if not exists_file(OUTPUT_DIR):
@@ -205,7 +205,7 @@ def build_program():
             # os.system('msbuild ' + PRJ_NAME + '.sln /property:Configuration=Release')
     else:
         success = os.system('make')
-        
+
     return success == 0
     
 
