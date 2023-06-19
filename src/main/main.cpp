@@ -104,7 +104,7 @@ class HelloTriangleApplication
 public:
   void run()
   {
-    this->window = std::make_unique<Window>("Vulkan", 800, 600);
+    this->window = std::make_unique<Window>("Vulkan", 800, 600, false);
     this->window->init();
     initVulkan();
     mainLoop();
@@ -173,10 +173,42 @@ private:
 
   void mainLoop()
   {
-    while (!this->window->isReadyToClose())
-    {
+    float lastTime = glfwGetTime();
+    float accumulator = 0.0f;
+    const unsigned short MAX_FPS = 3000;
+    const float MAX_FPS_PER_SEC = 1.0f / MAX_FPS;
+
+    // Show FPS / Second
+    float timer = 0.0f;
+    unsigned short fps = 0;
+    const uint8_t ONE_SECOND = 1;
+
+    while (!this->window->isReadyToClose()) {
       glfwPollEvents();
-      drawFrame();
+
+      float currentTime = glfwGetTime();
+      float delta = currentTime - lastTime;
+
+      timer += delta;
+      accumulator += delta;
+
+      lastTime = currentTime;
+
+      // Controls frame rate.
+      if (accumulator > MAX_FPS_PER_SEC) {
+        // Call engine logic
+        accumulator = 0.0f;
+        fps++;
+        drawFrame();
+      }
+
+      // Get fps per second.
+      if (timer > ONE_SECOND) {
+        std::cout << "FPS: " << fps << "\n";
+        fps = 0;
+        timer = 0.0f;
+      }
+
     }
 
     vkDeviceWaitIdle(device);
@@ -793,49 +825,113 @@ private:
     }
   }
 
-  void createVertexBuffer()
+  void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, 
+                    VkMemoryPropertyFlags properties, VkBuffer& buffer, 
+                    VkDeviceMemory& bufferMemory)
   {
     VkBufferCreateInfo bufferInfo{};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufferInfo.size = sizeof(vertices[0]) * vertices.size(); // Specify the size of the buffer in bytes.
-
-    bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT; // Indicate for which purposes the data in the buffer is going to be used. 
+    bufferInfo.size = size; // Specify the size of the buffer in bytes.
+    bufferInfo.usage = usage; // Indicate for which purposes the data in the buffer is going to be used. 
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE; // Buffers can also be 
                                                         // owned by a specific 
                                                         // queue family or be 
                                                         // shared between multiple at the same time. 
                                                         // The buffer will only be used from the graphics queue, 
                                                         // so we can stick to exclusive access.
-
     bufferInfo.flags = 0; //  Configure sparse buffer memory.
 
-    if (vkCreateBuffer(device, &bufferInfo, nullptr, &vertexBuffer) != VK_SUCCESS)
-    {
-      throw std::runtime_error("Error: Failed to create vertex buffer.\n");
+    if (vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
+        throw std::runtime_error("Error: Failed to create buffer.\n");
     }
 
     VkMemoryRequirements memRequirements;
-    vkGetBufferMemoryRequirements(device, vertexBuffer, &memRequirements);
+    vkGetBufferMemoryRequirements(device, buffer, &memRequirements);
 
     // Memory allocation.
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
 
-    if (vkAllocateMemory(device, &allocInfo, nullptr, &vertexBufferMemory) != VK_SUCCESS) {
-      throw std::runtime_error("Error: Failed to allocate vertex buffer memory.\n");
+    if (vkAllocateMemory(device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate buffer memory!");
     }
 
     // If memory allocation was successful, then we can now associate this memory with the buffer using.
-    vkBindBufferMemory(device, vertexBuffer, vertexBufferMemory, 0);
+    vkBindBufferMemory(device, buffer, bufferMemory, 0);
+  }
+
+  void createVertexBuffer()
+  {
+    VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+
+    // Create staging buffer
+    VkBuffer stagingBuffer;
+    VkDeviceMemory stagingBufferMemory;
+
+    createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
+                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
+                 stagingBuffer, stagingBufferMemory);
 
     // Copy the vertex data to the buffer.
     void* data;
-    vkMapMemory(device, vertexBufferMemory, 0, bufferInfo.size, 0, &data);
-    memcpy(data, vertices.data(), static_cast<size_t> (bufferInfo.size));
-    vkUnmapMemory(device, vertexBufferMemory);
+    vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
+        memcpy(data, vertices.data(), static_cast<size_t>(bufferSize));
+    vkUnmapMemory(device, stagingBufferMemory);
+
+    createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 
+                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer, 
+                 vertexBufferMemory);
+
+    copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
+
+    vkDestroyBuffer(device, stagingBuffer, nullptr);
+    vkFreeMemory(device, stagingBufferMemory, nullptr);
   }
+
+  // Copies the contents from one buffer to another,
+  void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) 
+  {
+    VkCommandBufferAllocateInfo allocInfo{};
+    allocInfo.sType       = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.level       = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandPool = commandPool;
+    allocInfo.commandBufferCount = 1;
+
+    VkCommandBuffer commandBuffer;
+    vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer);
+
+    // Record command buffer.
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+    VkBufferCopy copyRegion{};
+    copyRegion.srcOffset = 0;
+    copyRegion.dstOffset = 0;
+    copyRegion.size = size;
+
+    // Transfer the contents of buffers.
+    vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+
+    // Stop recording / copying
+    vkEndCommandBuffer(commandBuffer);
+
+    // Complete the transfer.
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &commandBuffer;
+
+    vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(graphicsQueue); // Wait for the transfer queue to become idle.
+
+    vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
+  }
+
 
   void createCommandBuffers()
   {
@@ -1076,7 +1172,12 @@ private:
       }
     }
 
-    return VK_PRESENT_MODE_FIFO_KHR;
+    if (this->window->isVsyncEnabled()) {
+      return VK_PRESENT_MODE_FIFO_KHR;
+    }
+    else {
+      return VK_PRESENT_MODE_IMMEDIATE_KHR;
+    }
   }
 
   VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities)

@@ -1,14 +1,19 @@
 #include <stdexcept>
-
+#include <iostream>
 #include "Window.hpp"
 
-Window::Window(const char *t_title, int t_width, int t_height)
+Window::Window(const char *t_title, int t_width, int t_height, bool vsync)
 {
 	this->m_title  = t_title;
 	this->m_width  = t_width;
 	this->m_height = t_height;
 
-	this->framebufferResized = false;
+	this->vsync = vsync;
+}
+
+Window::Window(const char *t_title, int t_width, int t_height) : Window(t_title, t_width, t_height, true)
+{
+	// Delegate constructor
 }
 
 Window::~Window() {
@@ -25,6 +30,8 @@ void Window::init()
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
 	glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+
+	this->setVsync(this->vsync);
 
 	// Create window
 	this->m_glfwWindow = glfwCreateWindow(this->m_width, this->m_height, 
@@ -54,4 +61,18 @@ GLFWwindow *Window::getGlfwWindow()
 bool Window::isReadyToClose()
 {
 	return glfwWindowShouldClose(this->m_glfwWindow);
+}
+
+bool Window::isVsyncEnabled()
+{
+	return this->vsync;
+}
+
+void Window::setVsync(bool vsync)
+{
+	this->vsync = vsync;
+
+	// Vulkan is the entity reponsible for vsync, but is a good idea
+	// to also tell glfw if vsync is desired or not.
+	vsync == true ? glfwSwapInterval(1) : glfwSwapInterval(0);
 }
