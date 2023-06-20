@@ -21,7 +21,7 @@ message("-=-=-=-=- Checking and loading libs -=-=-=-=-")
 
 # GLFW -- Load with GLEW help
 find_package(PkgConfig REQUIRED) 
-find_package(glfw3 3.2 REQUIRED)
+find_package(glfw3 3.3 REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(glm REQUIRED)
 pkg_search_module(GLFW REQUIRED glfw3)    

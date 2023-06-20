@@ -230,14 +230,15 @@ def run_program():
         else:
             os.system('./' + PRJ_NAME)
     else:
-        # 	#valgrind --leak-check=full \
+        # Valgrind options:
+        # --leak-check=full \
         # --show-leak-kinds=all \
         # --track-origins=yes \
         # --verbose \
         # --log-file=valgrind-out.txt \
         # ./PieceOfCake
 
-        os.system('valgrind --leak-check=yes ./' + PRJ_NAME)
+        os.system('valgrind --leak-check=yes --tool=memcheck --leak-check=full ./' + PRJ_NAME)
         # Warning: This script ends here if we reach at this point, because
         #          when closing the window, we also terminate this script.
 

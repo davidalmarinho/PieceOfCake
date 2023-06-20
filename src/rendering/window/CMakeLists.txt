@@ -1,5 +1,5 @@
 find_package(Vulkan REQUIRED)
-find_package(glfw3 3.2 REQUIRED)
+find_package(glfw3 3.3 REQUIRED)
 
 add_library(window
 	Window.cpp
