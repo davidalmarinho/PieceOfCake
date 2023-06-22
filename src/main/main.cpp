@@ -111,6 +111,21 @@ public:
   {
     this->window = std::make_unique<Window>("Vulkan", 800, 600, false);
     this->window->init();
+    this->window->showVersion();
+
+    // Show Vulkan version 
+    uint32_t instanceVersion = VK_API_VERSION_1_0;
+    auto FN_vkEnumerateInstanceVersion = PFN_vkEnumerateInstanceVersion(vkGetInstanceProcAddr(nullptr, "vkEnumerateInstanceVersion"));
+    if(vkEnumerateInstanceVersion){
+      vkEnumerateInstanceVersion(&instanceVersion );
+    }
+
+    uint32_t major = VK_VERSION_MAJOR(instanceVersion);
+    uint32_t minor = VK_VERSION_MINOR(instanceVersion);
+    uint32_t patch = VK_VERSION_PATCH(instanceVersion);
+
+    std::cout << "Vulkan Version:" << major << "." << minor << "." << patch << std::endl;
+    
     initVulkan();
     mainLoop();
     cleanup();
@@ -281,6 +296,7 @@ private:
     vkDestroyInstance(this->vkInstance, nullptr);
 
     this->window.reset();
+    
   }
 
   void createInstance()

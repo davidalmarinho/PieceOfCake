@@ -24,7 +24,6 @@ Window::~Window() {
 void Window::init()
 {
 	glfwInit();
-	std::cout << "Hello GLFW '" << glfwGetVersionString() << "' version!\n";
 
 	// GLFW, by default, creates an OpenGL context. So, we need to tell it that
 	// we don't want an OpenGL context, since we are working with Vulkan
@@ -47,6 +46,11 @@ void Window::createSurface(VkInstance vkInstance, VkSurfaceKHR* vkSurfaceKHR)
 		// TODO: Create a cool error system handling
 		throw std::runtime_error("Error: Failed to create window surface!\n");
 	}
+}
+
+void Window::showVersion()
+{
+	std::cout << "Hello GLFW '" << glfwGetVersionString() << " version!\n";
 }
 
 void Window::framebufferResizeCallback(GLFWwindow* window, int width, int height) {

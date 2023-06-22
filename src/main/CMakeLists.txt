@@ -23,7 +23,6 @@ message("-=-=-=-=- Checking and loading libs -=-=-=-=-")
 find_package(PkgConfig REQUIRED) 
 find_package(glfw3 3.3 REQUIRED)
 find_package(GLEW REQUIRED)
-find_package(glm REQUIRED)
 pkg_search_module(GLFW REQUIRED glfw3)    
 
 # Check if Glfw was been fund
@@ -47,9 +46,10 @@ else()
 endif(VULKAN_FOUND)
 
 # Check if glm was been found
+find_package(glm REQUIRED)
 if (glm_FOUND)
 	message(STATUS "${GREEN}> glm lib has been found.${COLOR_RESET}")
-	target_link_libraries(${PROJECT_NAME} glm)
+	target_link_libraries(${PROJECT_NAME} glm::glm)
 else()
 	message(STATUS "${RED}> Couldn't find glm lib!${COLOR_RESET}")
 endif(glm_FOUND)

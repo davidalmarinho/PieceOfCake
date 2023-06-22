@@ -238,7 +238,7 @@ def run_program():
         # --log-file=valgrind-out.txt \
         # ./PieceOfCake
 
-        os.system('valgrind --leak-check=yes --tool=memcheck --leak-check=full ./' + PRJ_NAME)
+        os.system('valgrind --leak-check=yes --leak-check=full ./' + PRJ_NAME)
         # Warning: This script ends here if we reach at this point, because
         #          when closing the window, we also terminate this script.
 

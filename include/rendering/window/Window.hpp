@@ -22,8 +22,10 @@ public:
 	Window(const char *title, int width, int height, bool vsync);
 	Window(const char *title, int width, int height);
 	~Window();
+
 	void init();
 	void createSurface(VkInstance vkInstance, VkSurfaceKHR* vkSurfaceKHR);
+	void showVersion();
 
 	GLFWwindow *getGlfwWindow();
 	bool isReadyToClose();
