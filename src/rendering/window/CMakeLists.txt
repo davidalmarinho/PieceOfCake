@@ -8,6 +8,7 @@ add_library(window
 target_include_directories(window
 	PRIVATE
 	"${PROJECT_SOURCE_DIR}/include/rendering/window/"
+	"${PROJECT_SOURCE_DIR}/include/input_device/"
 )
 
 target_link_libraries(window

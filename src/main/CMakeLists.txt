@@ -7,6 +7,7 @@ target_include_directories(${PROJECT_NAME}
 	"${PROJECT_SOURCE_DIR}/include/rendering/window/"
 	"${PROJECT_SOURCE_DIR}/include/rendering/"
 	"${PROJECT_SOURCE_DIR}/include/utils/"
+	"${PROJECT_SOURCE_DIR}/include/input_device/"
 )
 
 target_link_libraries(${PROJECT_NAME}
@@ -14,6 +15,7 @@ target_link_libraries(${PROJECT_NAME}
 	rendering
 	utils
 	window
+	input_device
 )
 
 # Libraries loading and linking

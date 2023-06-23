@@ -1,6 +1,8 @@
 #include <stdexcept>
 #include <iostream>
+
 #include "Window.hpp"
+#include "KeyListener.hpp"
 
 Window::Window(const char *t_title, int t_width, int t_height, bool vsync)
 {
@@ -38,6 +40,9 @@ void Window::init()
 				   this->m_title, nullptr, nullptr);
 	glfwSetWindowUserPointer(this->m_glfwWindow, this);
 	glfwSetFramebufferSizeCallback(this->m_glfwWindow, this->framebufferResizeCallback);
+
+	// Configure input devices
+	glfwSetKeyCallback(this->m_glfwWindow, KeyListener::keyCallback);
 }
 
 void Window::createSurface(VkInstance vkInstance, VkSurfaceKHR* vkSurfaceKHR)

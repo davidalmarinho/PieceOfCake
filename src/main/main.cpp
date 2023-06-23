@@ -19,6 +19,7 @@
 #include "Window.hpp"
 #include "VulkanDebugger.hpp"
 #include "AssetPool.hpp"
+#include "KeyListener.hpp"
 
 // Frames which should be processed concurrently.
 const int MAX_FRAMES_IN_FLIGHT = 2;
@@ -208,8 +209,6 @@ private:
     const uint8_t ONE_SECOND = 1;
 
     while (!this->window->isReadyToClose()) {
-      glfwPollEvents();
-
       float currentTime = glfwGetTime();
       float delta = currentTime - lastTime;
 
@@ -220,10 +219,16 @@ private:
 
       // Controls frame rate.
       if (accumulator > MAX_FPS_PER_SEC) {
+        KeyListener::update();
+        glfwPollEvents();
+
         // Call engine logic
         accumulator = 0.0f;
         fps++;
         drawFrame();
+        if (KeyListener::isBindUp(GLFW_KEY_LEFT_CONTROL, GLFW_KEY_E)) {
+          std::cout << "Brrrrrrrraa!\n";
+        }
       }
 
       // Get fps per second.
