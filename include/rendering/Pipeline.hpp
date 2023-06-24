@@ -44,8 +44,6 @@ public:
   void copyBuffer(VkDevice device, VkCommandPool commandPool, VkQueue graphicsQueue,
                   VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
-  void destroy(VkDevice device);
-
   std::vector<uint16_t> getIndices();
   VkPipeline getGraphicsPipeline();
   VkPipelineLayout getPipelineLayout();
