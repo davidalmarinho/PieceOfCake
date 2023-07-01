@@ -5,11 +5,22 @@
 
 uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties, VkPhysicalDevice physicalDevice);
 
+class ColorBlending
+{
+public:
+  VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
+  VkPipelineColorBlendStateCreateInfo colorBlending = {};
+
+  ColorBlending();
+  ~ColorBlending();
+};
+
 class Pipeline 
 {
 private:
   VkPipelineLayout pipelineLayout;
   VkPipeline graphicsPipeline;
+  VkRenderPass renderPass;
 
   // For vertex buffers
   VkBuffer vertexBuffer;
@@ -25,15 +36,17 @@ private:
     0, 1, 2, 2, 3, 0
   };
 
+  void createRenderPass(VkDevice device, VkFormat swapChainImageFormat);
+
 public:
 
   Pipeline(VkDevice device);
   ~Pipeline();
 
   VkShaderModule createShaderModule(VkDevice device, const std::vector<char> &code);
-  void createGraphicsPipeline(VkDevice device, VkRenderPass renderPass);
+  void createGraphicsPipeline(VkDevice device, VkFormat swapChainImageFormat);
   void createIndexBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
-                         VkCommandPool commandPool, VkRenderPass renderPass, VkQueue graphicsQueue);
+                         VkCommandPool commandPool, VkQueue graphicsQueue);
   void createVertexBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
                           VkCommandPool commandPool, VkQueue graphicsQueue);
   void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, 
@@ -44,9 +57,16 @@ public:
   void copyBuffer(VkDevice device, VkCommandPool commandPool, VkQueue graphicsQueue,
                   VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
+  // Multisample configuration
+  VkPipelineMultisampleStateCreateInfo setupMultisample();
+
+  // Stages:
+  VkPipelineRasterizationStateCreateInfo setupRasterizationStage();
+
   std::vector<uint16_t> getIndices();
   VkPipeline getGraphicsPipeline();
   VkPipelineLayout getPipelineLayout();
   VkBuffer getVertexBuffer();
   VkBuffer getIndexBuffer();
+  VkRenderPass getRenderPass();
 };

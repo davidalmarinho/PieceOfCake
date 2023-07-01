@@ -74,7 +74,7 @@ public:
     uint32_t minor = VK_VERSION_MINOR(instanceVersion);
     uint32_t patch = VK_VERSION_PATCH(instanceVersion);
 
-    std::cout << "Vulkan Version:" << major << "." << minor << "." << patch << std::endl;
+    std::cout << "Hello Vulkan Version:" << major << "." << minor << "." << patch << std::endl;
     
     initVulkan();
     mainLoop();
@@ -102,8 +102,6 @@ private:
   std::vector<VkImageView> swapChainImageViews;
   std::vector<VkFramebuffer> swapChainFramebuffers;
 
-  VkRenderPass renderPass;
-
   // Command Pool
   VkCommandPool commandPool;
   std::vector<VkCommandBuffer> commandBuffers; // Allocates command buffers.
@@ -128,14 +126,13 @@ private:
     createLogicalDevice();
     createSwapChain();
     createImageViews();
-    createRenderPass();
     this->pipeline = std::make_unique<Pipeline>(device);
-    this->pipeline->createGraphicsPipeline(device, renderPass);
+    this->pipeline->createGraphicsPipeline(device, swapChainImageFormat);
     createFramebuffers();
     createCommandPool();
     this->pipeline->createVertexBuffer(device, physicalDevice, commandPool, graphicsQueue);
-    this->pipeline->createIndexBuffer(device, physicalDevice, commandPool, 
-                                      renderPass, graphicsQueue);
+    this->pipeline->createIndexBuffer(device, physicalDevice, 
+                                      commandPool, graphicsQueue);
     createCommandBuffers();
     createSyncObjects();
   }
@@ -189,8 +186,6 @@ private:
     cleanupSwapChain();
 
     this->pipeline.reset();
-
-    vkDestroyRenderPass(device, renderPass, nullptr);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
@@ -515,55 +510,6 @@ private:
     }
   }
 
-  void createRenderPass()
-  {
-    VkAttachmentDescription colorAttachment{};
-    colorAttachment.format  = swapChainImageFormat;
-    colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-
-    colorAttachment.loadOp  = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-
-    colorAttachment.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-
-    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;     // Specifies which layout the image will have before the render pass begins.
-    colorAttachment.finalLayout   = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR; // Specifies the layout to automatically transition to when the render pass finishes.
-
-    VkAttachmentReference colorAttachmentRef{};
-    colorAttachmentRef.attachment = 0; // Specifies which attachment to reference by its index in the attachment descriptions array.
-    colorAttachmentRef.layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-    VkSubpassDescription subpass{};
-    subpass.pipelineBindPoint    = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass.colorAttachmentCount = 1; // The index of the attachment in this array is directly referenced from the fragment shader with the layout(location = 0) out vec4 outColor directive.
-    subpass.pColorAttachments    = &colorAttachmentRef;
-
-    VkSubpassDependency dependency{};
-    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-    dependency.dstSubpass = 0;
-
-    dependency.srcStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    dependency.srcAccessMask = 0;
-
-    dependency.dstStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-
-    VkRenderPassCreateInfo renderPassInfo{};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    renderPassInfo.attachmentCount = 1;
-    renderPassInfo.pAttachments    = &colorAttachment;
-    renderPassInfo.subpassCount    = 1;
-    renderPassInfo.pSubpasses      = &subpass;
-    renderPassInfo.dependencyCount = 1;
-    renderPassInfo.pDependencies   = &dependency;
-
-    if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS)
-    {
-      throw std::runtime_error("Failed to create the render pass.\n");
-    }
-  }
-
   void createFramebuffers()
   {
     // Resize the container to hold all of the framebuffers
@@ -576,7 +522,7 @@ private:
 
       VkFramebufferCreateInfo framebufferInfo{};
       framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-      framebufferInfo.renderPass      = renderPass;
+      framebufferInfo.renderPass      = this->pipeline->getRenderPass();
       framebufferInfo.attachmentCount = 1;
       framebufferInfo.pAttachments    = attachments;
       framebufferInfo.width           = swapChainExtent.width;
@@ -642,7 +588,7 @@ private:
 
     VkRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.sType       = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass  = renderPass;
+    renderPassInfo.renderPass  = this->pipeline->getRenderPass();
     renderPassInfo.framebuffer = swapChainFramebuffers[imageIndex];
 
     renderPassInfo.renderArea.offset = {0, 0};
