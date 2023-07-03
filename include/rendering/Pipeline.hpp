@@ -20,7 +20,6 @@ class Pipeline
 private:
   VkPipelineLayout pipelineLayout;
   VkPipeline graphicsPipeline;
-  VkRenderPass renderPass;
 
   // For vertex buffers
   VkBuffer vertexBuffer;
@@ -31,20 +30,19 @@ private:
 
   // Cache
   VkDevice cachedDevice;
+  VkRenderPass cachedRenderPass;
 
   const std::vector<uint16_t> indices = {
     0, 1, 2, 2, 3, 0
   };
 
-  void createRenderPass(VkDevice device, VkFormat swapChainImageFormat);
-
 public:
 
-  Pipeline(VkDevice device);
+  Pipeline(VkDevice device, VkRenderPass renderPass);
   ~Pipeline();
 
   VkShaderModule createShaderModule(VkDevice device, const std::vector<char> &code);
-  void createGraphicsPipeline(VkDevice device, VkFormat swapChainImageFormat);
+  void createGraphicsPipeline(VkDevice device, VkFormat swapChainImageFormat, VkRenderPass renderPass);
   void createIndexBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
                          VkCommandPool commandPool, VkQueue graphicsQueue);
   void createVertexBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
@@ -68,5 +66,4 @@ public:
   VkPipelineLayout getPipelineLayout();
   VkBuffer getVertexBuffer();
   VkBuffer getIndexBuffer();
-  VkRenderPass getRenderPass();
 };

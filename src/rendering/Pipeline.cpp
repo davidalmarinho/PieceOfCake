@@ -86,7 +86,7 @@ const std::vector<Vertex> vertices = {
   {{-0.5f,  0.5f}, {1.0f, 1.0f, 0.0f}}  // Bottom Left Corner
 };
 
-Pipeline::Pipeline(VkDevice device) : cachedDevice(device)
+Pipeline::Pipeline(VkDevice device, VkRenderPass renderPass) : cachedDevice(device), cachedRenderPass(renderPass)
 {
 
 }
@@ -102,7 +102,7 @@ Pipeline::~Pipeline()
   vkDestroyPipeline(cachedDevice, graphicsPipeline, nullptr);
   vkDestroyPipelineLayout(cachedDevice, pipelineLayout, nullptr);
 
-  vkDestroyRenderPass(cachedDevice, renderPass, nullptr);
+  vkDestroyRenderPass(cachedDevice, cachedRenderPass, nullptr);
 }
 
 // Shaders modules setup
@@ -129,10 +129,8 @@ VkShaderModule Pipeline::createShaderModule(VkDevice device, const std::vector<c
   return shaderModule;
 }
 
-void Pipeline::createGraphicsPipeline(VkDevice device, VkFormat swapChainImageFormat)
+void Pipeline::createGraphicsPipeline(VkDevice device, VkFormat swapChainImageFormat, VkRenderPass renderPass)
 {
-  this->createRenderPass(device, swapChainImageFormat);
-
   auto vertShaderCode = AssetPool::readFile("shaders/triangle_vertex_shader.spv");
   auto fragShaderCode = AssetPool::readFile("shaders/triangle_fragment_shader.spv");
 
@@ -244,55 +242,6 @@ void Pipeline::createGraphicsPipeline(VkDevice device, VkFormat swapChainImageFo
   // Clean shaders' modules
   vkDestroyShaderModule(device, fragShaderModule, nullptr);
   vkDestroyShaderModule(device, vertShaderModule, nullptr);
-}
-
-void Pipeline::createRenderPass(VkDevice device, VkFormat swapChainImageFormat)
-{
-  VkAttachmentDescription colorAttachment{};
-  colorAttachment.format  = swapChainImageFormat;
-  colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-
-  colorAttachment.loadOp  = VK_ATTACHMENT_LOAD_OP_CLEAR;
-  colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-
-  colorAttachment.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-  colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-
-  colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;     // Specifies which layout the image will have before the render pass begins.
-  colorAttachment.finalLayout   = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR; // Specifies the layout to automatically transition to when the render pass finishes.
-
-  VkAttachmentReference colorAttachmentRef{};
-  colorAttachmentRef.attachment = 0; // Specifies which attachment to reference by its index in the attachment descriptions array.
-  colorAttachmentRef.layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-  VkSubpassDescription subpass{};
-  subpass.pipelineBindPoint    = VK_PIPELINE_BIND_POINT_GRAPHICS;
-  subpass.colorAttachmentCount = 1; // The index of the attachment in this array is directly referenced from the fragment shader with the layout(location = 0) out vec4 outColor directive.
-  subpass.pColorAttachments    = &colorAttachmentRef;
-
-  VkSubpassDependency dependency{};
-  dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-  dependency.dstSubpass = 0;
-
-  dependency.srcStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-  dependency.srcAccessMask = 0;
-
-  dependency.dstStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-  dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-
-  VkRenderPassCreateInfo renderPassInfo{};
-  renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-  renderPassInfo.attachmentCount = 1;
-  renderPassInfo.pAttachments    = &colorAttachment;
-  renderPassInfo.subpassCount    = 1;
-  renderPassInfo.pSubpasses      = &subpass;
-  renderPassInfo.dependencyCount = 1;
-  renderPassInfo.pDependencies   = &dependency;
-
-  if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS)
-  {
-    throw std::runtime_error("Failed to create the render pass.\n");
-  }
 }
 
 void Pipeline::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, 
@@ -540,9 +489,4 @@ VkBuffer Pipeline::getVertexBuffer()
 VkBuffer Pipeline::getIndexBuffer()
 {
   return this->indexBuffer;
-}
-
-VkRenderPass Pipeline::getRenderPass()
-{
-  return this->renderPass;
 }

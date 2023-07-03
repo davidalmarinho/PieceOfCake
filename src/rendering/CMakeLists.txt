@@ -4,11 +4,14 @@ find_package(glm REQUIRED)
 add_library(rendering
 	VulkanDebugger.cpp
 	Pipeline.cpp
+	SwapChain.cpp
+	QueueFamilyIndices.cpp
 )
 
 target_include_directories(rendering
 	PRIVATE
 	"${PROJECT_SOURCE_DIR}/include/rendering/"
+	"${PROJECT_SOURCE_DIR}/include/rendering/window/"
 	"${PROJECT_SOURCE_DIR}/include/utils/"
 )
 
