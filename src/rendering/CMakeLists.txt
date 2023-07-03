@@ -2,6 +2,7 @@ find_package(Vulkan REQUIRED)
 find_package(glm REQUIRED)
 
 add_library(rendering
+	Renderer.cpp
 	VulkanDebugger.cpp
 	Pipeline.cpp
 	SwapChain.cpp
@@ -13,6 +14,7 @@ target_include_directories(rendering
 	"${PROJECT_SOURCE_DIR}/include/rendering/"
 	"${PROJECT_SOURCE_DIR}/include/rendering/window/"
 	"${PROJECT_SOURCE_DIR}/include/utils/"
+	"${PROJECT_SOURCE_DIR}/include/input_device/"
 )
 
 target_link_libraries(rendering
