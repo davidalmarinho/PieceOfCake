@@ -3,8 +3,6 @@
 #include <vulkan/vulkan.hpp>
 #include <memory>
 
-#include "Window.hpp"
-
 struct SwapChainSupportDetails
 {
   // We need to check for 3 kinds of prorperties:
@@ -19,9 +17,35 @@ struct SwapChainSupportDetails
 
 class SwapChain
 {
+  private:
+  VkRenderPass renderPass;
+  VkFormat swapChainImageFormat;
+  VkSwapchainKHR swapChain;
+  std::vector<VkImage> swapChainImages;
+  VkExtent2D swapChainExtent;
+  std::vector<VkImageView> swapChainImageViews;
+  std::vector<VkFramebuffer> swapChainFramebuffers;
+
+  /**
+   * We'll need one semaphore to signal that an image has been acquired from the swapchain and is ready for rendering,
+   * another one to signal that rendering has finished and presentation can happen, and a fence to make sure only one frame is rendering at a time.
+   */
+  std::vector<VkSemaphore> imageAvailableSemaphores;
+  std::vector<VkSemaphore> renderFinishedSemaphores;
+  std::vector<VkFence> inFlightFences;
+  std::vector<VkFence> imagesInFlight;
+
+  VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats);
+  VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes);
+
+  // Cache
+  VkDevice cachedDevice;
+
 public:
-  SwapChain(VkPhysicalDevice physicalDevice, VkDevice device, VkSurfaceKHR surface, Window* window);
+  SwapChain(VkPhysicalDevice physicalDevice, VkDevice device, VkSurfaceKHR surface);
   ~SwapChain();
+
+  size_t currentFrame = 0;
 
   const int MAX_FRAMES_IN_FLIGHT = 2;
 
@@ -32,18 +56,9 @@ public:
    * VkExtent2D windowExtent;
    */ 
 
-  /**
-   * We'll need one semaphore to signal that an image has been acquired from the swapchain and is ready for rendering,
-   * another one to signal that rendering has finished and presentation can happen, and a fence to make sure only one frame is rendering at a time.
-   */
-  std::vector<VkSemaphore> imageAvailableSemaphores;
-  std::vector<VkSemaphore> renderFinishedSemaphores;
-  std::vector<VkFence> inFlightFences;
-  std::vector<VkFence> imagesInFlight;
-  size_t currentFrame = 0;
   
-  void createSwapChain(VkPhysicalDevice physicalDevice, VkDevice device, VkSurfaceKHR surface, Window* window);
-  void recreateSwapChain(VkPhysicalDevice physicalDevice, VkDevice device, VkSurfaceKHR surface, Window* window);
+  void createSwapChain(VkPhysicalDevice physicalDevice, VkDevice device, VkSurfaceKHR surface);
+  void recreateSwapChain(VkPhysicalDevice physicalDevice, VkDevice device, VkSurfaceKHR surface);
   void createImageViews(VkDevice device);
   // void createDepthResources();
   void createRenderPass(VkDevice device);
@@ -52,27 +67,19 @@ public:
   void restartSwapChain(VkDevice device);
 
   // Helper functions
+
   SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface);
-  VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities, Window* window);
+  VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities);
 
   // Getters and setters
+
   VkFormat getSwapChainImageFormat();
   VkRenderPass getRenderPass();
-
-  // TODO: There are public variables that mustn't be public.
-  VkSwapchainKHR swapChain;
-  std::vector<VkImage> swapChainImages;
-  VkFormat swapChainImageFormat;
-  VkExtent2D swapChainExtent;
-  std::vector<VkImageView> swapChainImageViews;
-  std::vector<VkFramebuffer> swapChainFramebuffers;
-  VkRenderPass renderPass;
-
-private:
-  VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats);
-  VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes, Window* window);
-
-
-  // Cache
-  VkDevice cachedDevice;
+  VkSwapchainKHR getSwapChain();
+  VkExtent2D getSwapChainExtent();
+  std::vector<VkFramebuffer> getSwapChainFramebuffers();
+  std::vector<VkSemaphore> getImageAvailableSemaphores();
+  std::vector<VkSemaphore> getRenderFinishedSemaphores();
+  std::vector<VkFence> getInFlightFences();
+  std::vector<VkFence> getImagesInFlight();
 };

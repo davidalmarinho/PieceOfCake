@@ -35,18 +35,8 @@ private:
   const std::vector<uint16_t> indices = {
     0, 1, 2, 2, 3, 0
   };
-
-public:
-
-  Pipeline(VkDevice device, VkRenderPass renderPass);
-  ~Pipeline();
-
+  
   VkShaderModule createShaderModule(VkDevice device, const std::vector<char> &code);
-  void createGraphicsPipeline(VkDevice device, VkFormat swapChainImageFormat, VkRenderPass renderPass);
-  void createIndexBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
-                         VkCommandPool commandPool, VkQueue graphicsQueue);
-  void createVertexBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
-                          VkCommandPool commandPool, VkQueue graphicsQueue);
   void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, 
                     VkMemoryPropertyFlags properties, VkBuffer& buffer, 
                     VkDeviceMemory& bufferMemory,
@@ -54,12 +44,22 @@ public:
                     VkPhysicalDevice physicalDevice);
   void copyBuffer(VkDevice device, VkCommandPool commandPool, VkQueue graphicsQueue,
                   VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-
   // Multisample configuration
   VkPipelineMultisampleStateCreateInfo setupMultisample();
-
   // Stages:
   VkPipelineRasterizationStateCreateInfo setupRasterizationStage();
+
+public:
+  Pipeline(VkDevice device, VkRenderPass renderPass);
+  ~Pipeline();
+
+  void createGraphicsPipeline(VkDevice device, VkFormat swapChainImageFormat, VkRenderPass renderPass);
+  void createIndexBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
+                         VkCommandPool commandPool, VkQueue graphicsQueue);
+  void createVertexBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
+                          VkCommandPool commandPool, VkQueue graphicsQueue);
+
+  // Getters and Setters
 
   std::vector<uint16_t> getIndices();
   VkPipeline getGraphicsPipeline();

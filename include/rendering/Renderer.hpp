@@ -38,10 +38,18 @@ const std::vector<const char *> deviceExtensions = {
 class Renderer
 {
 public:
-  void run();
+  Renderer();
+  ~Renderer();
+  void init();
+  void drawFrame();
+
+  // Getters and Setters
+
+  VkDevice getDevice();
+  const std::unique_ptr<SwapChain> &getSwapChain() const;
+
+private:
   void initVulkan();
-  void mainLoop();
-  void cleanup();
   void createInstance();
   void pickPhysicalDevice();
   void createLogicalDevice();
@@ -49,23 +57,20 @@ public:
   void createCommandPool();
   void createCommandBuffers();
   void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
-  void drawFrame();
   bool isDeviceSuitable(VkPhysicalDevice device);
   bool checkDeviceExtensionSupport(VkPhysicalDevice device);
   std::vector<const char *> getRequiredExtensions();
   bool checkValidationLayerSupport();
 
-private:
-  std::unique_ptr<Window> window;
   std::unique_ptr<VulkanDebugger> vulkanDebugger;
   std::unique_ptr<SwapChain> swapChain;
+  std::unique_ptr<Pipeline> pipeline;
 
-  // TODO: Put these in another file
+  VkDevice device;
   VkInstance vkInstance;
   VkSurfaceKHR surface;
 
   VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-  VkDevice device;
 
   VkQueue graphicsQueue;
   VkQueue presentQueue;
@@ -73,6 +78,4 @@ private:
   // Command Pool
   VkCommandPool commandPool;
   std::vector<VkCommandBuffer> commandBuffers; // Allocates command buffers.
-
-  std::unique_ptr<Pipeline> pipeline;
 };

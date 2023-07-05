@@ -28,6 +28,32 @@ makepkg --install
 ```console
     WINDOWS:
     vcpkg install libigl[glfw]
+    vcpkg.exe install pkgconf:x64-windows
+vcpkg.exe install glfw3:x64-windows glfw3:x86-windows glew:x64-windows glew:x86-windows
+vcpkg install opengl glew glfw3 glm freetype eastl --triplet=x64-windows-static
+vcpkg install vulkan --triplet=x64-windows-static
+vcpkg.exe install glfw3 glfw3 glew glew --triplet=x64-windows-static
+
+---
+1º Install VulkanSDK
+
+2º
+Install vcpkg and install this packages with it:
+vcpkg.exe integrate install
+
+REALLY NECCESSARY:
+	vcpkg.exe install pkgconf:x64-windows
+	vcpkg.exe install glfw3:x64-windows-static
+
+vcpkg.exe install glfw3 --triplet=x64-windows-static
+vcpkg.exe install glew:x64-windows
+vcpkg.exe install glm
+~vcpkg.exe install glew
+~vcpkg.exe install glew --triplet=x64-windows-static
+X vcpkg install vulkan --triplet=x64-windows-static
+
+running: cmake .. -DCMAKE_TOOLCHAIN_FILE=D:/Softwares/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static
+compiling: msbuild SOLUTION.sln
 ```
 
 ## Include Configuration

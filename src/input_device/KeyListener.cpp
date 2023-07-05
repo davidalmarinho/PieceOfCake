@@ -1,4 +1,5 @@
 #include "KeyListener.hpp"
+
 #include <iostream>
 
 void KeyListener::keyCallback(GLFWwindow* window, int keycode, int scancode, int action, int mods)

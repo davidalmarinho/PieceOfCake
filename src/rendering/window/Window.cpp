@@ -11,6 +11,9 @@ Window::Window(const char *t_title, int t_width, int t_height, bool vsync)
 	this->m_height = t_height;
 
 	this->vsync = vsync;
+	
+	this->init();
+  this->showVersion();
 }
 
 Window::Window(const char *t_title, int t_width, int t_height) : Window(t_title, t_width, t_height, true)

@@ -1,93 +1,33 @@
 #include "Renderer.hpp"
+#include "Engine.hpp"
 
-void Renderer::run()
+Renderer::Renderer()
 {
-  this->window = std::make_unique<Window>("Vulkan", 800, 600, false);
-  this->window->init();
-  this->window->showVersion();
+  
+}
 
+void Renderer::init()
+{
   // Show Vulkan version 
-  uint32_t instanceVersion = VK_API_VERSION_1_0;
   auto FN_vkEnumerateInstanceVersion = PFN_vkEnumerateInstanceVersion(vkGetInstanceProcAddr(nullptr, "vkEnumerateInstanceVersion"));
-  if(vkEnumerateInstanceVersion){
-    vkEnumerateInstanceVersion(&instanceVersion );
+
+  uint32_t instanceVersion;
+  if(FN_vkEnumerateInstanceVersion == nullptr)
+    instanceVersion = VK_API_VERSION_1_0;
+  else {
+    auto result = FN_vkEnumerateInstanceVersion(&instanceVersion);
   }
 
   uint32_t major = VK_VERSION_MAJOR(instanceVersion);
   uint32_t minor = VK_VERSION_MINOR(instanceVersion);
   uint32_t patch = VK_VERSION_PATCH(instanceVersion);
 
-  std::cout << "Hello Vulkan Version:" << major << "." << minor << "." << patch << std::endl;
+  std::cout << "Hello Vulkan Version " << major << "." << minor << "." << patch << std::endl;
     
   initVulkan();
-  mainLoop();
-  cleanup();
 }
 
-void Renderer::initVulkan()
-{
-  createInstance();
-  this->vulkanDebugger = std::make_unique<VulkanDebugger>(this->vkInstance);
-  this->window->createSurface(this->vkInstance, &this->surface);
-  pickPhysicalDevice();
-  createLogicalDevice();
-  this->swapChain = std::make_unique<SwapChain>(physicalDevice, device, surface, window.get());
-  this->pipeline = std::make_unique<Pipeline>(device, swapChain->renderPass);
-  this->pipeline->createGraphicsPipeline(device, swapChain->getSwapChainImageFormat(), swapChain->getRenderPass());
-  this->swapChain->createFramebuffers(device);
-  createCommandPool();
-  this->pipeline->createVertexBuffer(device, physicalDevice, commandPool, graphicsQueue);
-  this->pipeline->createIndexBuffer(device, physicalDevice, 
-                                      commandPool, graphicsQueue);
-  createCommandBuffers();
-  this->swapChain->createSyncObjects(device);
-}
-
-void Renderer::mainLoop()
-{
-  float lastTime = glfwGetTime();
-  float accumulator = 0.0f;
-  const unsigned short MAX_FPS = 3000;
-  const float MAX_FPS_PER_SEC = 1.0f / MAX_FPS;
-
-  // Show FPS / Second
-  float timer = 0.0f;
-  unsigned short fps = 0;
-  const uint8_t ONE_SECOND = 1;
-
-  while (!this->window->isReadyToClose()) {
-    float currentTime = glfwGetTime();
-    float delta = currentTime - lastTime;
-
-    timer += delta;
-    accumulator += delta;
-
-    lastTime = currentTime;
-
-    // Controls frame rate.
-    if (accumulator > MAX_FPS_PER_SEC) {
-      KeyListener::update();
-      glfwPollEvents();
-
-      // Call engine logic
-      accumulator = 0.0f;
-      fps++;
-      drawFrame();
-    }
-
-    // Get fps per second.
-    if (timer > ONE_SECOND) {
-      std::cout << "FPS: " << fps << "\n";
-      fps = 0;
-      timer = 0.0f;
-    }
-
-  }
-
-  vkDeviceWaitIdle(device);
-}
-
-void Renderer::cleanup()
+Renderer::~Renderer()
 {
   this->swapChain.reset();
 
@@ -103,8 +43,25 @@ void Renderer::cleanup()
 
   vkDestroySurfaceKHR(this->vkInstance, surface, nullptr);
   vkDestroyInstance(this->vkInstance, nullptr);
+}
 
-  this->window.reset();
+void Renderer::initVulkan()
+{
+  createInstance();
+  this->vulkanDebugger = std::make_unique<VulkanDebugger>(this->vkInstance);
+  Engine::get()->getWindow()->createSurface(this->vkInstance, &this->surface);
+  pickPhysicalDevice();
+  createLogicalDevice();
+  this->swapChain = std::make_unique<SwapChain>(physicalDevice, device, surface);
+  this->pipeline = std::make_unique<Pipeline>(device, swapChain->getRenderPass());
+  this->pipeline->createGraphicsPipeline(device, swapChain->getSwapChainImageFormat(), swapChain->getRenderPass());
+  this->swapChain->createFramebuffers(device);
+  createCommandPool();
+  this->pipeline->createVertexBuffer(device, physicalDevice, commandPool, graphicsQueue);
+  this->pipeline->createIndexBuffer(device, physicalDevice, 
+                                      commandPool, graphicsQueue);
+  createCommandBuffers();
+  this->swapChain->createSyncObjects(device);
 }
 
 void Renderer::createInstance()
@@ -223,7 +180,7 @@ void Renderer::createLogicalDevice()
     createInfo.enabledLayerCount = 0;
   }
 
-  // TODO: Here we can specify extensions to do more cool stuff with vulkan.
+  // NOTE: Here we can specify extensions to do more cool stuff with vulkan.
 
   // Instantiate the logical.
   if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS) {
@@ -237,14 +194,14 @@ void Renderer::createLogicalDevice()
 void Renderer::recreateSwapChain()
 {
   int width = 0, height = 0;
-  glfwGetFramebufferSize(this->window->getGlfwWindow(), &width, &height);
+  glfwGetFramebufferSize(Engine::get()->getWindow()->getGlfwWindow(), &width, &height);
   while (width == 0 || height == 0) {
-    glfwGetFramebufferSize(this->window->getGlfwWindow(), &width, &height);
+    glfwGetFramebufferSize(Engine::get()->getWindow()->getGlfwWindow(), &width, &height);
     glfwWaitEvents();
   }
   vkDeviceWaitIdle(device);
 
-  this->swapChain->recreateSwapChain(physicalDevice, device, surface, window.get());
+  this->swapChain->recreateSwapChain(physicalDevice, device, surface);
 }
 
 void Renderer::createCommandPool()
@@ -297,10 +254,10 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
   VkRenderPassBeginInfo renderPassInfo{};
   renderPassInfo.sType       = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
   renderPassInfo.renderPass  = this->swapChain->getRenderPass();
-  renderPassInfo.framebuffer = swapChain->swapChainFramebuffers[imageIndex];
+  renderPassInfo.framebuffer = swapChain->getSwapChainFramebuffers()[imageIndex];
 
   renderPassInfo.renderArea.offset = {0, 0};
-  renderPassInfo.renderArea.extent = swapChain->swapChainExtent;
+  renderPassInfo.renderArea.extent = swapChain->getSwapChainExtent();
 
   VkClearValue clearColor        = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
   renderPassInfo.clearValueCount = 1;
@@ -317,15 +274,15 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
   VkViewport viewport{};
   viewport.x = 0.0f;
   viewport.y = 0.0f;
-  viewport.width  = static_cast<float>(swapChain->swapChainExtent.width);
-  viewport.height = static_cast<float>(swapChain->swapChainExtent.height);
+  viewport.width  = static_cast<float>(swapChain->getSwapChainExtent().width);
+  viewport.height = static_cast<float>(swapChain->getSwapChainExtent().height);
   viewport.minDepth = 0.0f;
   viewport.maxDepth = 1.0f;
   vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 
   VkRect2D scissor{};
   scissor.offset = {0, 0};
-  scissor.extent = swapChain->swapChainExtent;
+  scissor.extent = swapChain->getSwapChainExtent();
   vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
   VkBuffer vertexBuffers[] = {pipeline->getVertexBuffer()};
@@ -350,11 +307,11 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 void Renderer::drawFrame()
 {
   // Wait until the previous frame has finished.
-  vkWaitForFences(device, 1, &(swapChain->inFlightFences[swapChain->currentFrame]), VK_TRUE, UINT64_MAX);
+  vkWaitForFences(device, 1, &(swapChain->getInFlightFences()[swapChain->currentFrame]), VK_TRUE, UINT64_MAX);
 
   // Acquire an image from the swap chain.
   uint32_t imageIndex;
-  VkResult result = vkAcquireNextImageKHR(device, swapChain->swapChain, UINT64_MAX, swapChain->imageAvailableSemaphores[swapChain->currentFrame], VK_NULL_HANDLE, &imageIndex);
+  VkResult result = vkAcquireNextImageKHR(device, swapChain->getSwapChain(), UINT64_MAX, swapChain->getImageAvailableSemaphores()[swapChain->currentFrame], VK_NULL_HANDLE, &imageIndex);
 
   if (result == VK_ERROR_OUT_OF_DATE_KHR) { // Means that the window has been rezised and now we have to recreate the swapchain
     recreateSwapChain();
@@ -365,7 +322,7 @@ void Renderer::drawFrame()
   }
 
   // Only reset the fence if we are submitting work.
-  vkResetFences(device, 1, &(swapChain->inFlightFences[swapChain->currentFrame]));
+  vkResetFences(device, 1, &(swapChain->getInFlightFences()[swapChain->currentFrame]));
 
   vkResetCommandBuffer(commandBuffers[swapChain->currentFrame], /*VkCommandBufferResetFlagBits*/ 0);
   recordCommandBuffer(commandBuffers[swapChain->currentFrame], imageIndex);
@@ -374,7 +331,7 @@ void Renderer::drawFrame()
   VkSubmitInfo submitInfo{};
   submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-  VkSemaphore waitSemaphores[] = {swapChain->imageAvailableSemaphores[swapChain->currentFrame]};
+  VkSemaphore waitSemaphores[] = {swapChain->getImageAvailableSemaphores()[swapChain->currentFrame]};
   VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
   submitInfo.waitSemaphoreCount = 1;
   submitInfo.pWaitSemaphores = waitSemaphores;
@@ -383,11 +340,11 @@ void Renderer::drawFrame()
   submitInfo.commandBufferCount = 1;
   submitInfo.pCommandBuffers = &commandBuffers[swapChain->currentFrame];
 
-  VkSemaphore signalSemaphores[] = {swapChain->renderFinishedSemaphores[swapChain->currentFrame]};
+  VkSemaphore signalSemaphores[] = {swapChain->getRenderFinishedSemaphores()[swapChain->currentFrame]};
   submitInfo.signalSemaphoreCount = 1;
   submitInfo.pSignalSemaphores = signalSemaphores;
 
-  if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, swapChain->inFlightFences[swapChain->currentFrame]) != VK_SUCCESS) {
+  if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, swapChain->getInFlightFences()[swapChain->currentFrame]) != VK_SUCCESS) {
     throw std::runtime_error("Error: Failed to submit draw command buffer.");
   }
 
@@ -398,7 +355,7 @@ void Renderer::drawFrame()
   presentInfo.waitSemaphoreCount = 1;
   presentInfo.pWaitSemaphores = signalSemaphores;
 
-  VkSwapchainKHR swapChains[] = {swapChain->swapChain};
+  VkSwapchainKHR swapChains[] = {swapChain->getSwapChain()};
   presentInfo.swapchainCount  = 1;
   presentInfo.pSwapchains     = swapChains;
 
@@ -407,8 +364,8 @@ void Renderer::drawFrame()
   // Submit the request to present an image to the swap chain.
   result = vkQueuePresentKHR(presentQueue, &presentInfo);
 
-  if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || window->framebufferResized) {
-    window->framebufferResized = false;
+  if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || Engine::get()->getWindow()->framebufferResized) {
+    Engine::get()->getWindow()->framebufferResized = false;
     recreateSwapChain();
   } 
   else if (result != VK_SUCCESS) {
@@ -528,4 +485,16 @@ bool Renderer::checkValidationLayerSupport()
   }
 
   return true;
+}
+
+// Getters and Setters
+
+VkDevice Renderer::getDevice()
+{
+  return this->device;
+}
+
+const std::unique_ptr<SwapChain> &Renderer::getSwapChain() const
+{
+  return this->swapChain;
 }

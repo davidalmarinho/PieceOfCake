@@ -1,3 +1,21 @@
+add_library(engine
+	Engine.cpp
+)
+
+target_include_directories(engine
+	PRIVATE
+	"${PROJECT_SOURCE_DIR}/include/rendering/"
+	"${PROJECT_SOURCE_DIR}/include/rendering/window/"
+	"${PROJECT_SOURCE_DIR}/include/utils/"
+	"${PROJECT_SOURCE_DIR}/include/input_device/"
+	"${PROJECT_SOURCE_DIR}/include/main/"
+)
+
+target_link_libraries(engine
+	Vulkan::Vulkan
+	glm::glm
+)
+
 add_executable(${PROJECT_NAME}
 	main.cpp
 )
@@ -7,11 +25,13 @@ target_include_directories(${PROJECT_NAME}
 	"${PROJECT_SOURCE_DIR}/include/rendering/window/"
 	"${PROJECT_SOURCE_DIR}/include/rendering/"
 	"${PROJECT_SOURCE_DIR}/include/utils/"
+	"${PROJECT_SOURCE_DIR}/include/main/"
 	"${PROJECT_SOURCE_DIR}/include/input_device/"
 )
 
 target_link_libraries(${PROJECT_NAME}
 	# Global libraries
+	engine
 	rendering
 	utils
 	window

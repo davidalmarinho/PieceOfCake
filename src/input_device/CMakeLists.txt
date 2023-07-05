@@ -10,5 +10,5 @@ target_include_directories(input_device
 )
 
 target_link_libraries(input_device
-	glfw 
+	glfw
 )

@@ -3,22 +3,22 @@
 #include "SwapChain.hpp"
 #include "QueueFamilyIndices.hpp"
 #include "Pipeline.hpp"
+#include "Engine.hpp"
 
-// TODO: There are "Window*" pointers passed as parameters. There must be another workaround. 
-SwapChain::SwapChain(VkPhysicalDevice physicalDevice, VkDevice device, VkSurfaceKHR surface, Window* window) : cachedDevice(device)
+SwapChain::SwapChain(VkPhysicalDevice physicalDevice, VkDevice device, VkSurfaceKHR surface) : cachedDevice(device)
 {
-  this->createSwapChain(physicalDevice, device, surface, window);
+  this->createSwapChain(physicalDevice, device, surface);
   this->createImageViews(device);
   this->createRenderPass(device);
 }
 
-void SwapChain::createSwapChain(VkPhysicalDevice physicalDevice, VkDevice device, VkSurfaceKHR surface, Window* window)
+void SwapChain::createSwapChain(VkPhysicalDevice physicalDevice, VkDevice device, VkSurfaceKHR surface)
 {
   SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice, surface);
 
   VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.surfaceFormats);
-  VkPresentModeKHR presentMode     = chooseSwapPresentMode(swapChainSupport.presentModes, window);
-  VkExtent2D extent                = chooseSwapExtent(swapChainSupport.capabilities, window);
+  VkPresentModeKHR presentMode     = chooseSwapPresentMode(swapChainSupport.presentModes);
+  VkExtent2D extent                = chooseSwapExtent(swapChainSupport.capabilities);
 
   // Specify how many images we want in the swap chain
   uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
@@ -117,23 +117,23 @@ void SwapChain::restartSwapChain(VkDevice device)
   vkDestroySwapchainKHR(device, swapChain, nullptr);
 }
 
-void SwapChain::recreateSwapChain(VkPhysicalDevice physicalDevice, VkDevice device, VkSurfaceKHR surface, Window* window)
+void SwapChain::recreateSwapChain(VkPhysicalDevice physicalDevice, VkDevice device, VkSurfaceKHR surface)
 {
   this->restartSwapChain(device);
 
-  this->createSwapChain(physicalDevice, device, surface, window);
+  this->createSwapChain(physicalDevice, device, surface);
   this->createImageViews(device);
   this->createFramebuffers(device);
 }
 
-VkExtent2D SwapChain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities, Window* window)
+VkExtent2D SwapChain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities)
 {
   if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
     return capabilities.currentExtent;
   }
   else {
     int width, height;
-    glfwGetFramebufferSize(window->getGlfwWindow(), &width, &height);
+    glfwGetFramebufferSize(Engine::get()->getWindow()->getGlfwWindow(), &width, &height);
 
     VkExtent2D actualExtent = {
         static_cast<uint32_t>(width),
@@ -284,8 +284,7 @@ void SwapChain::createSyncObjects(VkDevice device)
     // Create Semaphores and Fences.
     if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
         vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
-        vkCreateFence(device, &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS)
-    {
+        vkCreateFence(device, &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS) {
       throw std::runtime_error("Failed to create synchronization objects for a frame.\n");
     }
   }
@@ -330,7 +329,7 @@ VkSurfaceFormatKHR SwapChain::chooseSwapSurfaceFormat(const std::vector<VkSurfac
 }
 
 // Setting up Presentation Mode --conditions for swaping images to the screen.
-VkPresentModeKHR SwapChain::chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes, Window* window)
+VkPresentModeKHR SwapChain::chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes)
 {
   for (const auto &availablePresentMode : availablePresentModes) {
     if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
@@ -338,7 +337,7 @@ VkPresentModeKHR SwapChain::chooseSwapPresentMode(const std::vector<VkPresentMod
     }
   }
 
-  if (window->isVsyncEnabled()) {
+  if (Engine::get()->getWindow()->isVsyncEnabled()) {
     return VK_PRESENT_MODE_FIFO_KHR;
   }
   else {
@@ -347,6 +346,7 @@ VkPresentModeKHR SwapChain::chooseSwapPresentMode(const std::vector<VkPresentMod
 }
 
 // Getters and Setters
+
 VkFormat SwapChain::getSwapChainImageFormat()
 {
   return this->swapChainImageFormat;
@@ -357,4 +357,37 @@ VkRenderPass SwapChain::getRenderPass()
   return this->renderPass;
 }
 
+VkSwapchainKHR SwapChain::getSwapChain()
+{
+  return this->swapChain;
+}
 
+VkExtent2D SwapChain::getSwapChainExtent()
+{
+  return this->swapChainExtent;
+}
+
+std::vector<VkFramebuffer> SwapChain::getSwapChainFramebuffers()
+{
+  return this->swapChainFramebuffers;
+}
+
+std::vector<VkSemaphore> SwapChain::getImageAvailableSemaphores()
+{
+  return this->imageAvailableSemaphores;
+}
+
+std::vector<VkSemaphore> SwapChain::getRenderFinishedSemaphores()
+{
+  return this->renderFinishedSemaphores;
+}
+
+std::vector<VkFence> SwapChain::getInFlightFences()
+{
+  return this->inFlightFences;
+}
+
+std::vector<VkFence> SwapChain::getImagesInFlight()
+{
+  return this->imagesInFlight;
+}
