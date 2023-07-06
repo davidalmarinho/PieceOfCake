@@ -2,6 +2,7 @@ find_package(Vulkan REQUIRED)
 find_package(glm REQUIRED)
 
 add_library(rendering
+	Model.cpp
 	Renderer.cpp
 	VulkanDebugger.cpp
 	Pipeline.cpp

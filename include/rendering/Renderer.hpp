@@ -19,6 +19,7 @@
 #include <array>
 
 #include "Window.hpp"
+#include "Model.hpp"
 #include "VulkanDebugger.hpp"
 #include "AssetPool.hpp"
 #include "KeyListener.hpp"
@@ -46,6 +47,9 @@ public:
   // Getters and Setters
 
   VkDevice getDevice();
+  VkPhysicalDevice getPhysicalDevice();
+  VkCommandPool getCommandPool();
+  VkQueue getGraphicsQueue();
   const std::unique_ptr<SwapChain> &getSwapChain() const;
 
 private:
@@ -61,7 +65,9 @@ private:
   bool checkDeviceExtensionSupport(VkPhysicalDevice device);
   std::vector<const char *> getRequiredExtensions();
   bool checkValidationLayerSupport();
+  void loadModels();
 
+  std::unique_ptr<Model> model;
   std::unique_ptr<VulkanDebugger> vulkanDebugger;
   std::unique_ptr<SwapChain> swapChain;
   std::unique_ptr<Pipeline> pipeline;

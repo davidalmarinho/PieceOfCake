@@ -31,6 +31,8 @@ Renderer::~Renderer()
 {
   this->swapChain.reset();
 
+  this->model.reset();
+
   this->pipeline.reset();
 
   vkDestroyCommandPool(device, commandPool, nullptr);
@@ -45,6 +47,23 @@ Renderer::~Renderer()
   vkDestroyInstance(this->vkInstance, nullptr);
 }
 
+void Renderer::loadModels()
+{
+  const std::vector<Model::Vertex> vertices = {
+    //  X      Y       R     G     B
+    {{-0.5f, -0.5f}, {1.0f, 0.0f, 1.0f}}, // Top Left Corner
+    {{ 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}}, // Top Right Corner
+    {{ 0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}}, // Bottom Right Corner
+    {{-0.5f,  0.5f}, {1.0f, 1.0f, 0.0f}}  // Bottom Left Corner
+  };
+
+  const std::vector<uint16_t> indices = {
+    0, 1, 2, 2, 3, 0
+  };
+
+  this->model = std::make_unique<Model>(vertices, indices);
+}
+
 void Renderer::initVulkan()
 {
   createInstance();
@@ -57,9 +76,9 @@ void Renderer::initVulkan()
   this->pipeline->createGraphicsPipeline(device, swapChain->getSwapChainImageFormat(), swapChain->getRenderPass());
   this->swapChain->createFramebuffers(device);
   createCommandPool();
-  this->pipeline->createVertexBuffer(device, physicalDevice, commandPool, graphicsQueue);
-  this->pipeline->createIndexBuffer(device, physicalDevice, 
-                                      commandPool, graphicsQueue);
+
+  this->loadModels();
+
   createCommandBuffers();
   this->swapChain->createSyncObjects(device);
 }
@@ -265,11 +284,8 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 
   vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-  // Bind vertex buffer.
-  vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->getGraphicsPipeline());
-
   // Bind Graphics Pipeline
-  vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->getGraphicsPipeline());
+  this->pipeline->bind(commandBuffer);
 
   VkViewport viewport{};
   viewport.x = 0.0f;
@@ -285,16 +301,8 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
   scissor.extent = swapChain->getSwapChainExtent();
   vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-  VkBuffer vertexBuffers[] = {pipeline->getVertexBuffer()};
-  VkDeviceSize offsets[] = {0};
-  vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets); // Bind vertex buffers to bindings.
-
-  vkCmdBindIndexBuffer(commandBuffer, pipeline->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT16); // Bind index buffers.
-                                                                    // Or VK_INDEX_TYPE_UINT32
-                                                                    // depending the type of the
-                                                                    // indices.
-
-  vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(pipeline->getIndices().size()), 1, 0, 0, 0);
+  this->model->bind(commandBuffer);
+  this->model->draw(commandBuffer);
 
   vkCmdEndRenderPass(commandBuffer);
 
@@ -492,6 +500,21 @@ bool Renderer::checkValidationLayerSupport()
 VkDevice Renderer::getDevice()
 {
   return this->device;
+}
+
+VkPhysicalDevice Renderer::getPhysicalDevice()
+{
+  return this->physicalDevice;
+}
+
+VkCommandPool Renderer::getCommandPool()
+{
+  return this->commandPool;
+}
+
+VkQueue Renderer::getGraphicsQueue()
+{
+  return this->graphicsQueue;
 }
 
 const std::unique_ptr<SwapChain> &Renderer::getSwapChain() const

@@ -20,7 +20,7 @@ void Engine::mainLoop()
 {
   float lastTime = glfwGetTime();
   float accumulator = 0.0f;
-  const unsigned short MAX_FPS = 3000;
+  const unsigned short MAX_FPS = 6000;
   const float MAX_FPS_PER_SEC = 1.0f / MAX_FPS;
 
   // Show FPS / Second
