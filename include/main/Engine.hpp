@@ -15,6 +15,8 @@ private:
   inline static std::shared_ptr<Engine> instance;
   std::unique_ptr<Window> window;
   std::unique_ptr<Renderer> renderer;
+  void processMemUsage(double& vm_usage, double& resident_set);
+  void printOS();
   void mainLoop();
 
   // TODO: Put this in an Utils file.

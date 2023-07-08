@@ -42,7 +42,7 @@ ColorBlending::~ColorBlending(){}
 
 Pipeline::Pipeline(VkDevice device, VkRenderPass renderPass) : cachedDevice(device), cachedRenderPass(renderPass)
 {
-
+  this->descriptorLayout = std::make_unique<DescriptorLayout>(device);
 }
 
 Pipeline::~Pipeline()
@@ -51,6 +51,8 @@ Pipeline::~Pipeline()
   vkDestroyPipelineLayout(cachedDevice, pipelineLayout, nullptr);
 
   vkDestroyRenderPass(cachedDevice, cachedRenderPass, nullptr);
+
+  this->descriptorLayout.reset();
 }
 
 void Pipeline::bind(VkCommandBuffer commandBuffer)
@@ -157,8 +159,8 @@ void Pipeline::createGraphicsPipeline(VkDevice device, VkFormat swapChainImageFo
 
   VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
   pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-  pipelineLayoutInfo.setLayoutCount         = 0;
-  pipelineLayoutInfo.pSetLayouts            = nullptr;
+  pipelineLayoutInfo.setLayoutCount         = 1;
+  pipelineLayoutInfo.pSetLayouts            = this->descriptorLayout->getDescriptorSetLayoutPointer();
   pipelineLayoutInfo.pushConstantRangeCount = 0;
   pipelineLayoutInfo.pPushConstantRanges    = nullptr;
 
@@ -246,7 +248,7 @@ VkPipelineRasterizationStateCreateInfo Pipeline::setupRasterizationStage()
   // Tell if the indices will be followed up by counter-clockwise mode
   // or followed up by clockwise mode.
   rasterizer.cullMode                = VK_CULL_MODE_BACK_BIT;
-  rasterizer.frontFace               = VK_FRONT_FACE_CLOCKWISE;
+  rasterizer.frontFace               = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 
   rasterizer.depthBiasEnable         = VK_FALSE;
   rasterizer.depthBiasConstantFactor = 0.0f;
@@ -264,4 +266,9 @@ VkPipelineLayout Pipeline::getPipelineLayout()
 VkPipeline Pipeline::getGraphicsPipeline()
 {
   return this->graphicsPipeline;
+}
+
+const std::unique_ptr<DescriptorLayout> &Pipeline::getDescriptorLayout() const
+{
+  return this->descriptorLayout;
 }

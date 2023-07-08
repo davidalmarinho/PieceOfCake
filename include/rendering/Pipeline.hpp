@@ -2,6 +2,9 @@
 
 #include <vulkan/vulkan.h>
 #include <vector>
+#include <memory>
+
+#include "DescriptorLayout.hpp"
 
 class ColorBlending
 {
@@ -18,6 +21,7 @@ class Pipeline
 private:
   VkPipelineLayout pipelineLayout;
   VkPipeline graphicsPipeline;
+  std::unique_ptr<DescriptorLayout> descriptorLayout;
 
   // Cache
   VkDevice cachedDevice;
@@ -35,8 +39,10 @@ public:
 
   void createGraphicsPipeline(VkDevice device, VkFormat swapChainImageFormat, VkRenderPass renderPass);
   void bind(VkCommandBuffer commandBuffer);
+
   // Getters and Setters
 
   VkPipeline getGraphicsPipeline();
   VkPipelineLayout getPipelineLayout();
+  const std::unique_ptr<DescriptorLayout> &getDescriptorLayout() const;
 };

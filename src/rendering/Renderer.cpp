@@ -31,9 +31,9 @@ Renderer::~Renderer()
 {
   this->swapChain.reset();
 
-  this->model.reset();
-
   this->pipeline.reset();
+
+  this->model.reset();
 
   vkDestroyCommandPool(device, commandPool, nullptr);
 
@@ -78,6 +78,9 @@ void Renderer::initVulkan()
   createCommandPool();
 
   this->loadModels();
+  this->pipeline->getDescriptorLayout()->createUniformBuffers();
+  this->pipeline->getDescriptorLayout()->createDescriptorPool();
+  this->pipeline->getDescriptorLayout()->createDescriptorSets();
 
   createCommandBuffers();
   this->swapChain->createSyncObjects(device);
@@ -302,6 +305,7 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
   vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
   this->model->bind(commandBuffer);
+  this->pipeline->getDescriptorLayout()->bind(commandBuffer);
   this->model->draw(commandBuffer);
 
   vkCmdEndRenderPass(commandBuffer);
@@ -328,6 +332,9 @@ void Renderer::drawFrame()
   else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
     throw std::runtime_error("Error: Failed to acquire swap chain image.");
   }
+
+  // Update uniform buffers.
+  this->pipeline->getDescriptorLayout()->updateUniformBuffer(this->swapChain->currentFrame);
 
   // Only reset the fence if we are submitting work.
   vkResetFences(device, 1, &(swapChain->getInFlightFences()[swapChain->currentFrame]));
@@ -520,4 +527,9 @@ VkQueue Renderer::getGraphicsQueue()
 const std::unique_ptr<SwapChain> &Renderer::getSwapChain() const
 {
   return this->swapChain;
+}
+
+const std::unique_ptr<Pipeline> &Renderer::getPipeline() const
+{
+  return this->pipeline;
 }

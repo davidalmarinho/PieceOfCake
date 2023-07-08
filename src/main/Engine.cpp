@@ -1,6 +1,14 @@
 #include "Engine.hpp"
 #include "KeyListener.hpp"
 
+#ifdef unix
+#include <iostream>
+#include <fstream>
+#include <unistd.h>
+#elif _WIN32
+// TODO: Windows imports for RAM calculations
+#endif
+
 Engine::Engine()
 {
   
@@ -13,7 +21,42 @@ Engine::~Engine()
 
 void Engine::init()
 {
+  this->printOS();
   this->renderer->init();
+}
+
+void Engine::processMemUsage(double& vm_usage, double& resident_set)
+{
+#ifdef unix
+    vm_usage     = 0.0;
+    resident_set = 0.0;
+
+    // the two fields we want
+    unsigned long vsize;
+    long rss;
+    {
+        std::string ignore;
+        std::ifstream ifs("/proc/self/stat", std::ios_base::in);
+        ifs >> ignore >> ignore >> ignore >> ignore >> ignore >> ignore >> ignore >> ignore >> ignore >> ignore
+                >> ignore >> ignore >> ignore >> ignore >> ignore >> ignore >> ignore >> ignore >> ignore >> ignore
+                >> ignore >> ignore >> vsize >> rss;
+    }
+
+    long page_size_kb = sysconf(_SC_PAGE_SIZE) / 1024; // in case x86-64 is configured to use 2MB pages
+    vm_usage = vsize / 1024.0;
+    resident_set = rss * page_size_kb;
+#elif _WIN32
+  // TODO: Windows calculation RAM usage
+#endif
+}
+
+void Engine::printOS()
+{
+#ifdef unix
+  std::cout << "Running on Linux.\n";
+#elif _WIN32
+  std::cout << "Running on Windows.\n";
+#endif
 }
 
 void Engine::mainLoop()
@@ -51,6 +94,9 @@ void Engine::mainLoop()
     // Get fps per second.
     if (timer > ONE_SECOND) {
       std::cout << "FPS: " << fps << "\n";
+      double vm = 0, rss = 0;
+      processMemUsage(vm, rss);
+      std::cout << "VM: " << vm << " kiB; RSS: " << rss << " kiB \n";
       fps = 0;
       timer = 0.0f;
     }

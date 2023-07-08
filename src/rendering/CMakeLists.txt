@@ -2,6 +2,7 @@ find_package(Vulkan REQUIRED)
 find_package(glm REQUIRED)
 
 add_library(rendering
+	DescriptorLayout.cpp
 	Model.cpp
 	Renderer.cpp
 	VulkanDebugger.cpp
@@ -17,6 +18,7 @@ target_include_directories(rendering
 	"${PROJECT_SOURCE_DIR}/include/utils/"
 	"${PROJECT_SOURCE_DIR}/include/input_device/"
 	"${PROJECT_SOURCE_DIR}/include/main/"
+	"${PROJECT_SOURCE_DIR}/include/utils/"
 )
 
 target_link_libraries(rendering

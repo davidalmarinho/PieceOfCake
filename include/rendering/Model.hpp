@@ -51,13 +51,6 @@ private:
 
   void createVertexBuffer(const std::vector<Model::Vertex> &vertices);
   void createIndexBuffer(const std::vector<uint16_t> indices);
-  void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, 
-                    VkMemoryPropertyFlags properties, VkBuffer& buffer, 
-                    VkDeviceMemory& bufferMemory,
-                    VkDevice device,
-                    VkPhysicalDevice physicalDevice);
   void copyBuffer(VkDevice device, VkCommandPool commandPool, VkQueue graphicsQueue,
                   VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-
-  uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties, VkPhysicalDevice physicalDevice);
 };

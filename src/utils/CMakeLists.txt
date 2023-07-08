@@ -1,5 +1,6 @@
 add_library(utils
 	AssetPool.cpp
+	Utils.cpp
 )
 
 target_include_directories(utils

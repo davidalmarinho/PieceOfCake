@@ -51,6 +51,7 @@ public:
   VkCommandPool getCommandPool();
   VkQueue getGraphicsQueue();
   const std::unique_ptr<SwapChain> &getSwapChain() const;
+  const std::unique_ptr<Pipeline> &getPipeline() const;
 
 private:
   void initVulkan();
