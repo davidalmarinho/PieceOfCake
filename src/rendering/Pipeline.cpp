@@ -60,38 +60,13 @@ void Pipeline::bind(VkCommandBuffer commandBuffer)
   vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->graphicsPipeline);
 }
 
-// Shaders modules setup
-/**
- * @brief Create VkShaderModule object so the program is able to pass
- * shaders' code to the pipeline.
- *
- * @param code
- * @return
- */
-VkShaderModule Pipeline::createShaderModule(VkDevice device, const std::vector<char> &code)
-{
-  VkShaderModuleCreateInfo createInfo{};
-  createInfo.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-  createInfo.codeSize = code.size();
-  createInfo.pCode    = reinterpret_cast<const uint32_t *>(code.data());
-
-  VkShaderModule shaderModule;
-  if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
-  {
-    throw std::runtime_error("Error: Failed to create shader module.\n");
-  }
-
-  return shaderModule;
-}
-
 void Pipeline::createGraphicsPipeline(VkDevice device, VkFormat swapChainImageFormat, VkRenderPass renderPass)
 {
-  auto vertShaderCode = AssetPool::readFile("shaders/triangle_vertex_shader.spv");
-  auto fragShaderCode = AssetPool::readFile("shaders/triangle_fragment_shader.spv");
+  std::shared_ptr shader = AssetPool::getShader("triangle");
 
   // Create shaders' modules
-  VkShaderModule vertShaderModule = createShaderModule(device, vertShaderCode);
-  VkShaderModule fragShaderModule = createShaderModule(device, fragShaderCode);
+  VkShaderModule fragShaderModule = shader->compile(device, shader->getFragmentShaderCode());
+  VkShaderModule vertShaderModule = shader->compile(device, shader->getVertexShaderCode());
 
   VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
   vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO; // Tells Vulkan in which pipeline stage the shader is going to be used.
@@ -111,7 +86,6 @@ void Pipeline::createGraphicsPipeline(VkDevice device, VkFormat swapChainImageFo
   VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
 
   // Vextex input
-  // For now, will be specified that there is no vertex data to load.
   VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
   vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
   vertexInputInfo.vertexBindingDescriptionCount = 0;

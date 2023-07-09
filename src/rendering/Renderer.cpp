@@ -30,9 +30,7 @@ void Renderer::init()
 Renderer::~Renderer()
 {
   this->swapChain.reset();
-
   this->pipeline.reset();
-
   this->model.reset();
 
   vkDestroyCommandPool(device, commandPool, nullptr);
@@ -71,6 +69,7 @@ void Renderer::initVulkan()
   Engine::get()->getWindow()->createSurface(this->vkInstance, &this->surface);
   pickPhysicalDevice();
   createLogicalDevice();
+  // AssetPool::addShader("triangle_shader", "shaders/triangle_fragment_shader.spv", "shaders/triangle_vertex_shader.spv");
   this->swapChain = std::make_unique<SwapChain>(physicalDevice, device, surface);
   this->pipeline = std::make_unique<Pipeline>(device, swapChain->getRenderPass());
   this->pipeline->createGraphicsPipeline(device, swapChain->getSwapChainImageFormat(), swapChain->getRenderPass());
@@ -78,9 +77,11 @@ void Renderer::initVulkan()
   createCommandPool();
 
   this->loadModels();
-  this->pipeline->getDescriptorLayout()->createUniformBuffers();
+
+  std::shared_ptr<Shader> shader = AssetPool::getShader("triangle");
+  shader->createUniformBuffers();
   this->pipeline->getDescriptorLayout()->createDescriptorPool();
-  this->pipeline->getDescriptorLayout()->createDescriptorSets();
+  this->pipeline->getDescriptorLayout()->createDescriptorSets(shader.get());
 
   createCommandBuffers();
   this->swapChain->createSyncObjects(device);
@@ -334,7 +335,8 @@ void Renderer::drawFrame()
   }
 
   // Update uniform buffers.
-  this->pipeline->getDescriptorLayout()->updateUniformBuffer(this->swapChain->currentFrame);
+  std::shared_ptr<Shader> shader = AssetPool::getShader("triangle");
+  shader->updateUniformBuffer(this->swapChain->currentFrame);
 
   // Only reset the fence if we are submitting work.
   vkResetFences(device, 1, &(swapChain->getInFlightFences()[swapChain->currentFrame]));

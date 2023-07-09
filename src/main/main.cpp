@@ -12,6 +12,7 @@ int main()
   eng->attachRenderer(std::move(renderer));
 
   // Init
+  eng->loadAssets();
   eng->init();
 
   // Launch

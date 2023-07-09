@@ -26,8 +26,7 @@ private:
   // Cache
   VkDevice cachedDevice;
   VkRenderPass cachedRenderPass;
-  
-  VkShaderModule createShaderModule(VkDevice device, const std::vector<char> &code);
+
   // Multisample configuration
   VkPipelineMultisampleStateCreateInfo setupMultisample();
   // Stages:

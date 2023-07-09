@@ -3,6 +3,7 @@ find_package(glm REQUIRED)
 
 add_library(rendering
 	DescriptorLayout.cpp
+	Shader.cpp
 	Model.cpp
 	Renderer.cpp
 	VulkanDebugger.cpp

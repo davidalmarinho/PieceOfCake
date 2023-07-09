@@ -1,5 +1,6 @@
 #include "Engine.hpp"
 #include "KeyListener.hpp"
+#include "AssetPool.hpp"
 
 #ifdef unix
 #include <iostream>
@@ -23,6 +24,11 @@ void Engine::init()
 {
   this->printOS();
   this->renderer->init();
+}
+
+void Engine::loadAssets()
+{
+  AssetPool::addShader("triangle", "shaders/triangle_fragment_shader.spv", "shaders/triangle_vertex_shader.spv");
 }
 
 void Engine::processMemUsage(double& vm_usage, double& resident_set)

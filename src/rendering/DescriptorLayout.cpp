@@ -1,5 +1,3 @@
-#define GLM_FORCE_RADIANS
-
 #include "DescriptorLayout.hpp"
 #include "Engine.hpp"
 #include "Utils.hpp"
@@ -15,11 +13,7 @@ DescriptorLayout::DescriptorLayout(VkDevice device) : cachedDevice(device)
 
 DescriptorLayout::~DescriptorLayout()
 {
-  for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-    vkDestroyBuffer(cachedDevice, uniformBuffers[i], nullptr);
-    vkFreeMemory(cachedDevice, uniformBuffersMemory[i], nullptr);
-  }
-  
+  AssetPool::cleanup();
   vkDestroyDescriptorPool(cachedDevice, descriptorPool, nullptr);
 
   vkDestroyDescriptorSetLayout(cachedDevice, descriptorSetLayout, nullptr);
@@ -47,51 +41,6 @@ void DescriptorLayout::createDescriptorSetLayout(VkDevice device)
   }
 }
 
-void DescriptorLayout::createUniformBuffers()
-{
-  VkDeviceSize bufferSize = sizeof(DescriptorLayout::UniformBufferObject);
-
-  uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-  uniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
-  uniformBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
-
-  VkDevice device = Engine::get()->getRenderer()->getDevice();
-  VkPhysicalDevice physicalDevice = Engine::get()->getRenderer()->getPhysicalDevice();
-
-  for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-    Utils::createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 
-                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
-                 uniformBuffers[i], uniformBuffersMemory[i], device, physicalDevice);
-
-    // Map the buffer right after creation using vkMapMemory to get a pointer to 
-    // which we can write the data later on.
-    // This technique is called "persistent mapping".
-    vkMapMemory(device, uniformBuffersMemory[i], 0, bufferSize, 0, &uniformBuffersMapped[i]);
-  }
-}
-
-void DescriptorLayout::updateUniformBuffer(uint32_t currentFrame)
-{
-  // TODO: This test calculates a time that should be proveninet of the frame rate.
-  // TODO: This should be done in something like a Shader class
-  static auto startTime = std::chrono::high_resolution_clock::now();
-
-  auto currentTime = std::chrono::high_resolution_clock::now();
-  float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
-  UniformBufferObject ubo{};
-  ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-  ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-  ubo.proj = glm::perspective(glm::radians(45.0f), 
-                              Engine::get()->getRenderer()->getSwapChain()->getSwapChainExtent().width / 
-                              static_cast<float>(Engine::get()->getRenderer()->getSwapChain()->getSwapChainExtent().height), 
-                              0.1f, 10.0f);
-
-  ubo.proj[1][1] *= -1;
-
-  memcpy(uniformBuffersMapped[currentFrame], &ubo, sizeof(ubo));
-}
-
 void DescriptorLayout::createDescriptorPool()
 {
   // Describe which descriptor types our descriptor sets are going to contain 
@@ -114,7 +63,7 @@ void DescriptorLayout::createDescriptorPool()
   }
 }
 
-void DescriptorLayout::createDescriptorSets()
+void DescriptorLayout::createDescriptorSets(Shader* shader)
 {
   // Create one descriptor set for each frame in flight, all with the same layout.
   std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
@@ -132,9 +81,9 @@ void DescriptorLayout::createDescriptorSets()
   for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
     // Specify the buffer and the region within it that contains the data for the descriptor.
     VkDescriptorBufferInfo bufferInfo{};
-    bufferInfo.buffer = uniformBuffers[i];
+    bufferInfo.buffer = shader->getUniformBuffers()[i];
     bufferInfo.offset = 0;
-    bufferInfo.range = sizeof(UniformBufferObject);
+    bufferInfo.range = sizeof(Shader::UniformBufferObject);
 
     // Update configuration of descriptors.
     VkWriteDescriptorSet descriptorWrite{};
