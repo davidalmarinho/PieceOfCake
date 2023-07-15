@@ -51,6 +51,4 @@ private:
 
   void createVertexBuffer(const std::vector<Model::Vertex> &vertices);
   void createIndexBuffer(const std::vector<uint16_t> indices);
-  void copyBuffer(VkDevice device, VkCommandPool commandPool, VkQueue graphicsQueue,
-                  VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 };

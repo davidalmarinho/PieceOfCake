@@ -11,4 +11,10 @@ namespace Utils
                     VkDeviceMemory& bufferMemory,
                     VkDevice device,
                     VkPhysicalDevice physicalDevice);
+  
+  void copyBuffer(VkDevice device, VkCommandPool commandPool, VkQueue graphicsQueue, 
+                          VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+  VkCommandBuffer beginSingleTimeCommands(VkDevice device, VkCommandPool commandPool);
+  void endSingleTimeCommands(VkDevice device, VkQueue graphicsQueue, 
+                                  VkCommandPool commandPool, VkCommandBuffer commandBuffer);
 }

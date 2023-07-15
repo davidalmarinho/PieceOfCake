@@ -1,0 +1,18 @@
+# find_package(SDL2 REQUIRED)
+# find_package(SDL2_image REQUIRED)
+
+add_library(textures
+	Texture.cpp
+)
+
+target_include_directories(textures
+	PRIVATE
+	"${PROJECT_SOURCE_DIR}/include/rendering/textures/"
+	"${PROJECT_SOURCE_DIR}/include/stb_image/"
+	"${PROJECT_SOURCE_DIR}/include/utils/"
+)
+
+# target_link_libraries(textures
+# 	SDL2_image::SDL2_image
+# 	SDL2::SDL2
+# )

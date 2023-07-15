@@ -30,6 +30,7 @@ void Renderer::init()
 Renderer::~Renderer()
 {
   this->swapChain.reset();
+  this->testTexture.reset();
   this->pipeline.reset();
   this->model.reset();
 
@@ -75,6 +76,10 @@ void Renderer::initVulkan()
   this->pipeline->createGraphicsPipeline(device, swapChain->getSwapChainImageFormat(), swapChain->getRenderPass());
   this->swapChain->createFramebuffers(device);
   createCommandPool();
+
+  // TODO: For texture test purposes. Remove it when isn't needed anymore.
+  this->testTexture = std::make_unique<Texture>(device);
+  this->testTexture->createTextureImage(device, physicalDevice, graphicsQueue, commandPool);
 
   this->loadModels();
 

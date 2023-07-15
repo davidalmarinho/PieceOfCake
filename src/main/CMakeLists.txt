@@ -6,6 +6,7 @@ target_include_directories(engine
 	PRIVATE
 	"${PROJECT_SOURCE_DIR}/include/rendering/"
 	"${PROJECT_SOURCE_DIR}/include/rendering/window/"
+	"${PROJECT_SOURCE_DIR}/include/rendering/textures/"
 	"${PROJECT_SOURCE_DIR}/include/utils/"
 	"${PROJECT_SOURCE_DIR}/include/input_device/"
 	"${PROJECT_SOURCE_DIR}/include/main/"
@@ -23,6 +24,7 @@ add_executable(${PROJECT_NAME}
 target_include_directories(${PROJECT_NAME} 
 	PRIVATE 
 	"${PROJECT_SOURCE_DIR}/include/rendering/window/"
+	"${PROJECT_SOURCE_DIR}/include/rendering/textures/"
 	"${PROJECT_SOURCE_DIR}/include/rendering/"
 	"${PROJECT_SOURCE_DIR}/include/utils/"
 	"${PROJECT_SOURCE_DIR}/include/main/"
@@ -33,6 +35,7 @@ target_link_libraries(${PROJECT_NAME}
 	# Global libraries
 	engine
 	rendering
+	textures
 	utils
 	window
 	input_device

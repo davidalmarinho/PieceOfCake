@@ -15,6 +15,7 @@ add_library(rendering
 target_include_directories(rendering
 	PRIVATE
 	"${PROJECT_SOURCE_DIR}/include/rendering/"
+	"${PROJECT_SOURCE_DIR}/include/rendering/textures/"
 	"${PROJECT_SOURCE_DIR}/include/rendering/window/"
 	"${PROJECT_SOURCE_DIR}/include/utils/"
 	"${PROJECT_SOURCE_DIR}/include/input_device/"
@@ -28,3 +29,4 @@ target_link_libraries(rendering
 )
 
 add_subdirectory(window)
+add_subdirectory(textures)

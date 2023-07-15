@@ -26,6 +26,7 @@
 #include "Pipeline.hpp"
 #include "QueueFamilyIndices.hpp"
 #include "SwapChain.hpp"
+#include "Texture.hpp"
 
 // Frames which should be processed concurrently.
 const int MAX_FRAMES_IN_FLIGHT = 2;
@@ -43,6 +44,9 @@ public:
   ~Renderer();
   void init();
   void drawFrame();
+
+  // TODO: Tmp test variable. Remove it later
+  std::unique_ptr<Texture> testTexture;
 
   // Getters and Setters
 

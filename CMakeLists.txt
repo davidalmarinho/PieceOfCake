@@ -92,8 +92,5 @@ file(INSTALL out/shaders DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 
 # add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 
-# TODO: Don't forget to copy the assets folder to the out directory
-#add_custom_target(copy_assets                                                                                
-#    COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/assets" "${CMAKE_LIBRARY_OUTPUT_DIRECTO      RY}/assets"                                                                                                   
-#)                                                                                                            
-                                                                                                              
+# Copy the assets folder to the output directory
+file(COPY assets DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})

@@ -23,6 +23,9 @@ In arch linux you have to install "glm-git" instead "glm" from Arch Linux User R
 git clone https://aur.archlinux.org/glm-git.git
 cd glm-git
 makepkg --install
+
+sudo pacman -S sdl2-image -> Acho que não é necessário
+sudo pacman -S sdl2 Acho -> que não é necessário
 ```
 
 ```console
