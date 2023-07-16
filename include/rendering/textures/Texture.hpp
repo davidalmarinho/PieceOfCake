@@ -7,6 +7,8 @@ class Texture
 private:
   VkImage textureImage;
   VkDeviceMemory textureImageMemory;
+  VkImageView textureImageView;
+  VkSampler textureSampler;
   
   // Cache
   VkDevice cachedDevice;
@@ -32,4 +34,6 @@ public:
   ~Texture();
   void createTextureImage(VkDevice device, VkPhysicalDevice physicalDevice, 
                                  VkQueue graphicsQueue, VkCommandPool commandPool);
+  void createTextureImageView(VkDevice device);
+  void createTextureSampler(VkDevice device, VkPhysicalDevice physicalDevice);
 };

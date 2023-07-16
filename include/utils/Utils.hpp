@@ -17,4 +17,6 @@ namespace Utils
   VkCommandBuffer beginSingleTimeCommands(VkDevice device, VkCommandPool commandPool);
   void endSingleTimeCommands(VkDevice device, VkQueue graphicsQueue, 
                                   VkCommandPool commandPool, VkCommandBuffer commandBuffer);
+  
+  VkImageView createImageView(VkDevice device, VkImage image, VkFormat format);
 }

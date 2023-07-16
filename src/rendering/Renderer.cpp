@@ -80,6 +80,8 @@ void Renderer::initVulkan()
   // TODO: For texture test purposes. Remove it when isn't needed anymore.
   this->testTexture = std::make_unique<Texture>(device);
   this->testTexture->createTextureImage(device, physicalDevice, graphicsQueue, commandPool);
+  this->testTexture->createTextureImageView(device);
+  this->testTexture->createTextureSampler(device, physicalDevice);
 
   this->loadModels();
 
@@ -184,6 +186,7 @@ void Renderer::createLogicalDevice()
   }
 
   VkPhysicalDeviceFeatures deviceFeatures{};
+  deviceFeatures.samplerAnisotropy = VK_TRUE; // Enable Anisotropy device feature.
 
   // Creating Logical Device.
   VkDeviceCreateInfo createInfo{};
@@ -427,6 +430,10 @@ bool Renderer::isDeviceSuitable(VkPhysicalDevice device)
     SwapChainSupportDetails swapChainSupport = swapChain->querySwapChainSupport(device, surface);
     swapChainAdequate = !swapChainSupport.surfaceFormats.empty() && !swapChainSupport.presentModes.empty();
   }
+
+  // Check if the device supports Anisotropy device feature.
+  VkPhysicalDeviceFeatures supportedFeatures;
+  vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
 
   return indices.isComplete() && extensionsSupported && swapChainAdequate;
 }

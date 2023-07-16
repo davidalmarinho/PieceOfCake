@@ -4,6 +4,7 @@
 #include "QueueFamilyIndices.hpp"
 #include "Pipeline.hpp"
 #include "Engine.hpp"
+#include "Utils.hpp"
 
 SwapChain::SwapChain(VkPhysicalDevice physicalDevice, VkDevice device, VkSurfaceKHR surface) : cachedDevice(device)
 {
@@ -153,42 +154,7 @@ void SwapChain::createImageViews(VkDevice device)
   swapChainImageViews.resize(swapChainImages.size());
 
   for (size_t i = 0; i < swapChainImages.size(); i++) {
-    VkImageViewCreateInfo createInfo{};
-    createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    createInfo.image = swapChainImages[i];
-
-    /* viewType and format fields specify how the image data should
-     * be interpreted. The viewType parameter allows you to treat
-     * images as 1D textures, 2D textures, 3D textures and cube maps.
-     */
-    createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    createInfo.format = swapChainImageFormat;
-
-    // Swizzle the image color channels
-    createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-    createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-    createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-    createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-
-    // The subresourceRange field describes what the image’s
-    // purpose is and which part of the image should be accessed.
-    createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    createInfo.subresourceRange.baseMipLevel = 0;
-    createInfo.subresourceRange.levelCount = 1;
-    createInfo.subresourceRange.baseArrayLayer = 0;
-    createInfo.subresourceRange.layerCount = 1;
-
-    /*  _________________________________________________________
-     * | Note:                                                   |
-     * | If you were working on a stereographic 3D application,  |
-     * | then you would create a swap chain with multiple layers.|
-     * |_________________________________________________________|
-     */
-
-    // Create image views
-    if (vkCreateImageView(device, &createInfo, nullptr, &swapChainImageViews[i]) != VK_SUCCESS) {
-      throw std::runtime_error("failed to create image views!");
-    }
+    swapChainImageViews[i] = Utils::createImageView(device, swapChainImages[i], swapChainImageFormat);
   }
 }
 

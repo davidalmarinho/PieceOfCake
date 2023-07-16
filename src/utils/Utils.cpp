@@ -120,3 +120,40 @@ void Utils::copyBuffer(VkDevice device, VkCommandPool commandPool, VkQueue graph
 
   endSingleTimeCommands(device, graphicsQueue, commandPool, commandBuffer);
 }
+
+VkImageView Utils::createImageView(VkDevice device, VkImage image, VkFormat format)
+{
+  VkImageViewCreateInfo viewInfo{};
+  viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+  viewInfo.image = image;
+
+  /* viewType and format fields specify how the image data should
+   * be interpreted. The viewType parameter allows you to treat
+   * images as 1D textures, 2D textures, 3D textures and cube maps.
+   */
+  viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+  viewInfo.format = format;
+
+  // The subresourceRange field describes what the image’s
+  // purpose is and which part of the image should be accessed.
+  viewInfo.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+  viewInfo.subresourceRange.baseMipLevel   = 0;
+  viewInfo.subresourceRange.levelCount     = 1;
+  viewInfo.subresourceRange.baseArrayLayer = 0;
+  viewInfo.subresourceRange.layerCount     = 1;
+
+  /*  _________________________________________________________
+   * | Note:                                                   |
+   * | If you were working on a stereographic 3D application,  |
+   * | then you would create a swap chain with multiple layers.|
+   * |_________________________________________________________|
+   */
+
+  // Create image views
+  VkImageView imageView;
+  if (vkCreateImageView(device, &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
+    throw std::runtime_error("Error: Failed to create texture image views.\n");
+  }
+
+  return imageView;
+}

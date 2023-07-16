@@ -12,6 +12,9 @@ Texture::Texture(VkDevice device) : cachedDevice(device)
 
 Texture::~Texture()
 {
+  vkDestroySampler(cachedDevice, textureSampler, nullptr);
+  vkDestroyImageView(cachedDevice, textureImageView, nullptr);
+
   vkDestroyImage(cachedDevice, textureImage, nullptr);
   vkFreeMemory(cachedDevice, textureImageMemory, nullptr);
 }
@@ -118,6 +121,62 @@ void Texture::createTextureImage(VkDevice device, VkPhysicalDevice physicalDevic
 
   vkDestroyBuffer(device, stagingBuffer, nullptr);
   vkFreeMemory(device, stagingBufferMemory, nullptr);
+}
+
+void Texture::createTextureImageView(VkDevice device)
+{
+  textureImageView = Utils::createImageView(device, textureImage, VK_FORMAT_R8G8B8A8_SRGB);
+}
+
+void Texture::createTextureSampler(VkDevice device, VkPhysicalDevice physicalDevice)
+{
+  // Specify all filters and transformations that should be applied.
+  VkSamplerCreateInfo samplerInfo{};
+  samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+  // Specify how to interpolate texels that are magnified or minified.
+  samplerInfo.magFilter = VK_FILTER_LINEAR;
+  samplerInfo.minFilter = VK_FILTER_LINEAR;
+
+  // NOTE: Here exists the possibility to play around with textures.
+  samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+  samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+  samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+
+  // Specify if anisotropic filtering should be used.
+  samplerInfo.anisotropyEnable = VK_TRUE;
+  VkPhysicalDeviceProperties properties{};
+  vkGetPhysicalDeviceProperties(physicalDevice, &properties);
+  // Limits the amount of texel samples that can be used to calculate the final color.
+  // In this case it is being choosen quality over performance.
+  samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
+  /*
+   * NOTE:
+   * To disable anisotropic filtering:
+   * samplerInfo.anisotropyEnable = VK_FALSE;
+   * samplerInfo.maxAnisotropy = 1.0f;
+   */
+
+  // Specify which color is returned when sampling beyond the image with clamp to border addressing mode.
+  samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+
+  // Specify which coordinate system you want to use to address texels in an image.
+  samplerInfo.unnormalizedCoordinates = VK_FALSE;
+
+  // If a comparison function is enabled, then texels will first be compared to 
+  // a value, and the result of that comparison is used in filtering operations. 
+  // This is mainly used for percentage-closer filtering on shadow maps.
+  samplerInfo.compareEnable = VK_FALSE;
+  samplerInfo.compareOp     = VK_COMPARE_OP_ALWAYS;
+
+  // Mipmapping configuration.
+  samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+  samplerInfo.mipLodBias = 0.0f;
+  samplerInfo.minLod = 0.0f;
+  samplerInfo.maxLod = 0.0f;
+
+  if (vkCreateSampler(device, &samplerInfo, nullptr, &textureSampler) != VK_SUCCESS) {
+    throw std::runtime_error("Error: Failed to create the texture sampler.\n");
+  }
 }
 
 // Handles image layout transitions.
