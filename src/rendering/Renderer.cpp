@@ -49,11 +49,11 @@ Renderer::~Renderer()
 void Renderer::loadModels()
 {
   const std::vector<Model::Vertex> vertices = {
-    //  X      Y       R     G     B
-    {{-0.5f, -0.5f}, {1.0f, 0.0f, 1.0f}}, // Top Left Corner
-    {{ 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}}, // Top Right Corner
-    {{ 0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}}, // Bottom Right Corner
-    {{-0.5f,  0.5f}, {1.0f, 1.0f, 0.0f}}  // Bottom Left Corner
+    //  X      Y       R     G     B       U     V
+    {{-0.5f, -0.5f}, {1.0f, 0.0f, 1.0f}, {1.0f, 0.0f}}, // Top Left Corner
+    {{ 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}}, // Top Right Corner
+    {{ 0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}}, // Bottom Right Corner
+    {{-0.5f,  0.5f}, {1.0f, 1.0f, 0.0f}, {1.0f, 1.0f}}  // Bottom Left Corner
   };
 
   const std::vector<uint16_t> indices = {
@@ -85,10 +85,10 @@ void Renderer::initVulkan()
 
   this->loadModels();
 
-  std::shared_ptr<Shader> shader = AssetPool::getShader("triangle");
+  std::shared_ptr<Shader> shader = AssetPool::getShader("texture");
   shader->createUniformBuffers();
   this->pipeline->getDescriptorLayout()->createDescriptorPool();
-  this->pipeline->getDescriptorLayout()->createDescriptorSets(shader.get());
+  this->pipeline->getDescriptorLayout()->createDescriptorSets(shader.get(), testTexture.get());
 
   createCommandBuffers();
   this->swapChain->createSyncObjects(device);
@@ -343,7 +343,7 @@ void Renderer::drawFrame()
   }
 
   // Update uniform buffers.
-  std::shared_ptr<Shader> shader = AssetPool::getShader("triangle");
+  std::shared_ptr<Shader> shader = AssetPool::getShader("texture");
   shader->updateUniformBuffer(this->swapChain->currentFrame);
 
   // Only reset the fence if we are submitting work.

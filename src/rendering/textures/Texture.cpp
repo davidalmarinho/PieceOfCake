@@ -125,7 +125,7 @@ void Texture::createTextureImage(VkDevice device, VkPhysicalDevice physicalDevic
 
 void Texture::createTextureImageView(VkDevice device)
 {
-  textureImageView = Utils::createImageView(device, textureImage, VK_FORMAT_R8G8B8A8_SRGB);
+  this->textureImageView = Utils::createImageView(device, textureImage, VK_FORMAT_R8G8B8A8_SRGB);
 }
 
 void Texture::createTextureSampler(VkDevice device, VkPhysicalDevice physicalDevice)
@@ -277,4 +277,16 @@ void Texture::copyBufferToImage(VkDevice device, VkQueue graphicsQueue,
   );
 
   Utils::endSingleTimeCommands(device, graphicsQueue, commandPool, commandBuffer);
+}
+
+// Getters and Setters
+
+VkImageView Texture::getTextureImageView()
+{
+  return this->textureImageView;
+}
+
+VkSampler Texture::getTextureSampler()
+{
+  return this->textureSampler;
 }

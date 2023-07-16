@@ -36,4 +36,9 @@ public:
                                  VkQueue graphicsQueue, VkCommandPool commandPool);
   void createTextureImageView(VkDevice device);
   void createTextureSampler(VkDevice device, VkPhysicalDevice physicalDevice);
+
+  // Getters and Setters
+
+  VkImageView getTextureImageView();
+  VkSampler getTextureSampler();
 };

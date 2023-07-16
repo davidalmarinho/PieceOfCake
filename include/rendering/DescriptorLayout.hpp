@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 
 #include "Shader.hpp"
+#include "Texture.hpp"
 
 class DescriptorLayout
 {
@@ -12,7 +13,7 @@ public:
   ~DescriptorLayout();
 
   void createDescriptorPool();
-  void createDescriptorSets(Shader* shader);
+  void createDescriptorSets(Shader* shader, Texture* texture);
   void bind(VkCommandBuffer commandBuffer);
 
   // Getters and Setters

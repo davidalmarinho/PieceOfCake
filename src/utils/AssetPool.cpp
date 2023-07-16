@@ -70,7 +70,7 @@ std::vector<char> AssetPool::readFile(const std::string& filename)
 	std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
 	if (!file.is_open()) {
-		throw std::runtime_error("Error: Failed to open file!\n");
+		throw std::runtime_error("Error: Failed to open file.\n");
 	}
 	
 	size_t fileSize = (size_t) file.tellg();

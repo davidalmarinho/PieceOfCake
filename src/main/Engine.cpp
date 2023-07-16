@@ -28,7 +28,7 @@ void Engine::init()
 
 void Engine::loadAssets()
 {
-  AssetPool::addShader("triangle", "shaders/triangle_fragment_shader.spv", "shaders/triangle_vertex_shader.spv");
+  AssetPool::addShader("texture", "shaders/texture_fragment_shader.spv", "shaders/texture_vertex_shader.spv");
 }
 
 void Engine::processMemUsage(double& vm_usage, double& resident_set)

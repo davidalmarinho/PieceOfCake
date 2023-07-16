@@ -62,7 +62,7 @@ void Pipeline::bind(VkCommandBuffer commandBuffer)
 
 void Pipeline::createGraphicsPipeline(VkDevice device, VkFormat swapChainImageFormat, VkRenderPass renderPass)
 {
-  std::shared_ptr shader = AssetPool::getShader("triangle");
+  std::shared_ptr shader = AssetPool::getShader("texture");
 
   // Create shaders' modules
   VkShaderModule fragShaderModule = shader->compile(device, shader->getFragmentShaderCode());

@@ -100,22 +100,28 @@ VkVertexInputBindingDescription Model::Vertex::getBindingDescription()
   return bindingDescription;
 }
 
-std::array<VkVertexInputAttributeDescription, 2> Model::Vertex::getAttributeDescriptions()
+std::array<VkVertexInputAttributeDescription, 3> Model::Vertex::getAttributeDescriptions()
 {
-  std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
+  std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
 
-  // Position attribute
+  // Position attribute.
   attributeDescriptions[0].binding  = 0; // Tell Vulkan from which binding the per-vertex data comes.
   attributeDescriptions[0].location = 0; // References the location directive of the input in the vertex shader. 
-                                        // The input in the vertex shader with location 0 is the position, which has two 32-bit float components.
+                                         // The input in the vertex shader with location 0 is the position, which has two 32-bit float components.
   attributeDescriptions[0].format   = VK_FORMAT_R32G32_SFLOAT; // Describe the type of data for the attribute.
   attributeDescriptions[0].offset   = offsetof(Vertex, pos); // Specify the number of bytes since the start of the per-vertex data to read from.
 
-  // Color attribute
-  attributeDescriptions[1].binding = 0;
+  // Color attribute.
+  attributeDescriptions[1].binding  = 0;
   attributeDescriptions[1].location = 1;
-  attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-  attributeDescriptions[1].offset = offsetof(Vertex, color);
+  attributeDescriptions[1].format   = VK_FORMAT_R32G32B32_SFLOAT;
+  attributeDescriptions[1].offset   = offsetof(Vertex, color);
+
+  // Texture coordinates attribute.
+  attributeDescriptions[2].binding  = 0;
+  attributeDescriptions[2].location = 2;
+  attributeDescriptions[2].format   = VK_FORMAT_R32G32_SFLOAT;
+  attributeDescriptions[2].offset   = offsetof(Vertex, texCoords);
 
   return attributeDescriptions;
 }
