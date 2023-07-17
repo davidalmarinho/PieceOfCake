@@ -119,6 +119,18 @@ void Pipeline::createGraphicsPipeline(VkDevice device, VkFormat swapChainImageFo
   // Multisampling --is one of the ways to perform anti-aliasing.
   VkPipelineMultisampleStateCreateInfo multisampling = this->setupMultisample();
 
+  VkPipelineDepthStencilStateCreateInfo depthStencil{};
+  depthStencil.sType                 = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+  depthStencil.depthTestEnable       = VK_TRUE;
+  depthStencil.depthWriteEnable      = VK_TRUE;
+  depthStencil.depthCompareOp        = VK_COMPARE_OP_LESS;
+  depthStencil.depthBoundsTestEnable = VK_FALSE;
+  depthStencil.minDepthBounds        = 0.0f;
+  depthStencil.maxDepthBounds        = 1.0f;
+  depthStencil.stencilTestEnable     = VK_FALSE;
+  depthStencil.front                 = {};
+  depthStencil.back                  = {};
+
   ColorBlending colorBlending = ColorBlending();
 
   // Dynamic State
@@ -152,7 +164,7 @@ void Pipeline::createGraphicsPipeline(VkDevice device, VkFormat swapChainImageFo
   pipelineInfo.pViewportState      = &viewportState;
   pipelineInfo.pRasterizationState = &rasterizer;
   pipelineInfo.pMultisampleState   = &multisampling;
-  pipelineInfo.pDepthStencilState  = nullptr;
+  pipelineInfo.pDepthStencilState  = &depthStencil;
   pipelineInfo.pColorBlendState    = &(colorBlending.colorBlending);
   pipelineInfo.pDynamicState       = &dynamicState;
 

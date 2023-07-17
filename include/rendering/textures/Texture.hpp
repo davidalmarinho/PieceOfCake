@@ -12,17 +12,6 @@ private:
   
   // Cache
   VkDevice cachedDevice;
-
-  void createImage(VkDevice device, VkPhysicalDevice physicalDevice,
-                 uint32_t texWidth, uint32_t texHeight, VkFormat format, 
-                 VkImageTiling tiling, VkImageUsageFlags usage, 
-                 VkMemoryPropertyFlags properties, VkImage& image, 
-                 VkDeviceMemory& imageMemory);
-
-  void transitionImageLayout(VkDevice device, VkQueue graphicsQueue, 
-                             VkCommandPool commandPool, VkImage image, 
-                             VkFormat format, VkImageLayout oldLayout, 
-                             VkImageLayout newLayout);
   
   void copyBufferToImage(VkDevice device, VkQueue graphicsQueue, 
                                 VkCommandPool commandPool,

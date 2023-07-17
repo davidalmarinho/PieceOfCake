@@ -10,7 +10,7 @@ class Model
 public:
   // Structure to specify an array of vertex data.
   struct Vertex {
-    glm::vec2 pos;
+    glm::vec3 pos;
     glm::vec3 color;
     glm::vec2 texCoords;
 

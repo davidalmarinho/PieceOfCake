@@ -121,7 +121,7 @@ void Utils::copyBuffer(VkDevice device, VkCommandPool commandPool, VkQueue graph
   endSingleTimeCommands(device, graphicsQueue, commandPool, commandBuffer);
 }
 
-VkImageView Utils::createImageView(VkDevice device, VkImage image, VkFormat format)
+VkImageView Utils::createImageView(VkDevice device, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags)
 {
   VkImageViewCreateInfo viewInfo{};
   viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -136,7 +136,7 @@ VkImageView Utils::createImageView(VkDevice device, VkImage image, VkFormat form
 
   // The subresourceRange field describes what the image’s
   // purpose is and which part of the image should be accessed.
-  viewInfo.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+  viewInfo.subresourceRange.aspectMask     = aspectFlags;
   viewInfo.subresourceRange.baseMipLevel   = 0;
   viewInfo.subresourceRange.levelCount     = 1;
   viewInfo.subresourceRange.baseArrayLayer = 0;
@@ -156,4 +156,148 @@ VkImageView Utils::createImageView(VkDevice device, VkImage image, VkFormat form
   }
 
   return imageView;
+}
+
+void Utils::createImage(VkDevice device, VkPhysicalDevice physicalDevice,
+                 uint32_t width, uint32_t height, VkFormat format, 
+                 VkImageTiling tiling, VkImageUsageFlags usage, 
+                 VkMemoryPropertyFlags properties, VkImage& image, 
+                 VkDeviceMemory& imageMemory)
+{
+
+  VkImageCreateInfo imageInfo{};
+  imageInfo.sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+  imageInfo.imageType     = VK_IMAGE_TYPE_2D;
+  imageInfo.extent.width  = static_cast<uint32_t>(width);
+  imageInfo.extent.height = static_cast<uint32_t>(height);
+  imageInfo.extent.depth  = 1;
+  imageInfo.mipLevels     = 1;
+  imageInfo.arrayLayers   = 1;
+
+  // Use the same format for the texels as the pixels in the buffer, otherwise the copy operation will fail.
+  imageInfo.format = format;
+
+  // VK_IMAGE_TILING_LINEAR: Texels are laid out in row-major order like our pixels array.
+  // VK_IMAGE_TILING_OPTIMAL: Texels are laid out in an implementation defined order for optimal access.
+  imageInfo.tiling = tiling;
+
+
+  // VK_IMAGE_LAYOUT_PREINITIALIZED: Not usable by the GPU, but the first transition will preserve the texels.
+  imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; // Not usable by the GPU and the very first transition will discard the texels.
+
+  imageInfo.usage = usage;
+
+
+  // Image will only be used by one queue family: the one that supports graphics (and therefore also) transfer operations.
+  imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+  imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+  imageInfo.flags   = 0; // NOTE: To make a Voxel Engine you should explore the available flags for this option.
+  
+  if (vkCreateImage(device, &imageInfo, nullptr, &image) != VK_SUCCESS) {
+    throw std::runtime_error("Error: Failed to create the image.\n");
+  }
+
+  // Allocate memory for the image.
+  VkMemoryRequirements memRequirements;
+  vkGetImageMemoryRequirements(device, image, &memRequirements);
+
+  VkMemoryAllocateInfo allocInfo{};
+  allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+  allocInfo.allocationSize = memRequirements.size;
+  allocInfo.memoryTypeIndex = Utils::findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                                    physicalDevice);
+
+  if (vkAllocateMemory(device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
+    throw std::runtime_error("failed to allocate image memory!");
+  }
+
+  vkBindImageMemory(device, image, imageMemory, 0);
+}
+
+// Handles image layout transitions.
+void Utils::transitionImageLayout(VkDevice device, VkQueue graphicsQueue, 
+                                    VkCommandPool commandPool, VkImage image, 
+                                    VkFormat format, VkImageLayout oldLayout, 
+                                    VkImageLayout newLayout)
+{
+  VkCommandBuffer commandBuffer = Utils::beginSingleTimeCommands(device, commandPool);
+
+  // Use pipeline barrier like that is generally used to synchronize access to resources.
+  // NOTE: We can use this barrier to transfer queue family ownership when VK_SHARING_MODE_EXCLUSIVE is used. 
+  VkImageMemoryBarrier barrier{};
+  barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+  barrier.oldLayout = oldLayout;
+  barrier.newLayout = newLayout;
+
+  barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+  barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+
+  // Specifies the image that is affected and the specific part of the image.
+  barrier.image = image;
+
+  if (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+
+    if (Utils::hasStencilComponent(format)) {
+        barrier.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+    }
+  } 
+  else {
+      barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+  }
+
+  barrier.subresourceRange.baseMipLevel   = 0;
+  barrier.subresourceRange.levelCount     = 1;
+  barrier.subresourceRange.baseArrayLayer = 0;
+  barrier.subresourceRange.layerCount     = 1;
+
+  VkPipelineStageFlags sourceStage;
+  VkPipelineStageFlags destinationStage;
+
+  // Transfer destination: transfer writes that don't need to wait on anything.
+  if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+    barrier.srcAccessMask = 0;
+    barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+    sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+  }
+  // Shader reading: shader reads should wait on transfer writes, 
+  // specifically the shader reads in the fragment shader, because that's where 
+  // we're going to use the texture.
+  else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+    barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+    sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+  }
+  else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+    barrier.srcAccessMask = 0;
+    barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+    sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+  }
+  else {
+    throw std::invalid_argument("Error: Unsupported layout transition.\n");
+  }
+
+  vkCmdPipelineBarrier(
+    commandBuffer,
+    sourceStage, destinationStage,
+    0,
+    0, nullptr,
+    0, nullptr,
+    1, &barrier
+  );
+
+  Utils::endSingleTimeCommands(device, graphicsQueue, commandPool, commandBuffer);
+}
+
+// Helper function that tells us if the chosen depth format contains a stencil component.
+bool Utils::hasStencilComponent(VkFormat format)
+{
+    return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 }

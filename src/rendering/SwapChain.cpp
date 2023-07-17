@@ -10,7 +10,7 @@ SwapChain::SwapChain(VkPhysicalDevice physicalDevice, VkDevice device, VkSurface
 {
   this->createSwapChain(physicalDevice, device, surface);
   this->createImageViews(device);
-  this->createRenderPass(device);
+  this->createRenderPass(device, physicalDevice);
 }
 
 void SwapChain::createSwapChain(VkPhysicalDevice physicalDevice, VkDevice device, VkSurfaceKHR surface)
@@ -107,6 +107,10 @@ SwapChain::~SwapChain()
 
 void SwapChain::restartSwapChain(VkDevice device)
 {
+  vkDestroyImageView(cachedDevice, depthImageView, nullptr);
+  vkDestroyImage(cachedDevice, depthImage, nullptr);
+  vkFreeMemory(cachedDevice, depthImageMemory, nullptr);
+
   for (size_t i = 0; i < swapChainFramebuffers.size(); i++) {
     vkDestroyFramebuffer(device, swapChainFramebuffers[i], nullptr);
   }
@@ -118,12 +122,14 @@ void SwapChain::restartSwapChain(VkDevice device)
   vkDestroySwapchainKHR(device, swapChain, nullptr);
 }
 
-void SwapChain::recreateSwapChain(VkPhysicalDevice physicalDevice, VkDevice device, VkSurfaceKHR surface)
+void SwapChain::recreateSwapChain(VkDevice device, VkPhysicalDevice physicalDevice, 
+                                  VkQueue graphicsQueue, VkCommandPool commandPool, VkSurfaceKHR surface)
 {
   this->restartSwapChain(device);
 
   this->createSwapChain(physicalDevice, device, surface);
   this->createImageViews(device);
+  this->createDepthResources(device, physicalDevice, graphicsQueue, commandPool);
   this->createFramebuffers(device);
 }
 
@@ -154,11 +160,12 @@ void SwapChain::createImageViews(VkDevice device)
   swapChainImageViews.resize(swapChainImages.size());
 
   for (size_t i = 0; i < swapChainImages.size(); i++) {
-    swapChainImageViews[i] = Utils::createImageView(device, swapChainImages[i], swapChainImageFormat);
+    swapChainImageViews[i] = Utils::createImageView(device, swapChainImages[i], 
+                                                    swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
   }
 }
 
-void SwapChain::createRenderPass(VkDevice device)
+void SwapChain::createRenderPass(VkDevice device, VkPhysicalDevice physicalDevice)
 {
   VkAttachmentDescription colorAttachment{};
   colorAttachment.format  = swapChainImageFormat;
@@ -173,36 +180,53 @@ void SwapChain::createRenderPass(VkDevice device)
   colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;     // Specifies which layout the image will have before the render pass begins.
   colorAttachment.finalLayout   = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR; // Specifies the layout to automatically transition to when the render pass finishes.
 
+  VkAttachmentDescription depthAttachment{};
+  depthAttachment.format         = findDepthFormat(physicalDevice);
+  depthAttachment.samples        = VK_SAMPLE_COUNT_1_BIT;
+  depthAttachment.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
+  depthAttachment.storeOp        = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+  depthAttachment.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+  depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+  depthAttachment.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
+  depthAttachment.finalLayout    = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
   VkAttachmentReference colorAttachmentRef{};
   colorAttachmentRef.attachment = 0; // Specifies which attachment to reference by its index in the attachment descriptions array.
   colorAttachmentRef.layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
+  VkAttachmentReference depthAttachmentRef{};
+  depthAttachmentRef.attachment = 1;
+  depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+
   VkSubpassDescription subpass{};
-  subpass.pipelineBindPoint    = VK_PIPELINE_BIND_POINT_GRAPHICS;
-  subpass.colorAttachmentCount = 1; // The index of the attachment in this array is directly referenced from the fragment shader with the layout(location = 0) out vec4 outColor directive.
-  subpass.pColorAttachments    = &colorAttachmentRef;
+  subpass.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
+  subpass.colorAttachmentCount    = 1; // The index of the attachment in this array is directly referenced from the fragment shader with the layout(location = 0) out vec4 outColor directive.
+  subpass.pColorAttachments       = &colorAttachmentRef;
+  subpass.pDepthStencilAttachment = &depthAttachmentRef;
 
   VkSubpassDependency dependency{};
   dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
   dependency.dstSubpass = 0;
 
-  dependency.srcStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+  dependency.srcStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
   dependency.srcAccessMask = 0;
 
-  dependency.dstStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-  dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+  dependency.dstStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+  dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
+  std::array<VkAttachmentDescription, 2> attachments = {colorAttachment, depthAttachment};
   VkRenderPassCreateInfo renderPassInfo{};
-  renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-  renderPassInfo.attachmentCount = 1;
-  renderPassInfo.pAttachments    = &colorAttachment;
+  renderPassInfo.sType           = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+  renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+  renderPassInfo.pAttachments    = attachments.data();
   renderPassInfo.subpassCount    = 1;
   renderPassInfo.pSubpasses      = &subpass;
   renderPassInfo.dependencyCount = 1;
   renderPassInfo.pDependencies   = &dependency;
 
   if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
-    throw std::runtime_error("Failed to create the render pass.\n");
+    throw std::runtime_error("Error: Failed to create the render pass.\n");
   }
 }
 
@@ -212,14 +236,16 @@ void SwapChain::createFramebuffers(VkDevice device)
   swapChainFramebuffers.resize(swapChainImageViews.size());
 
   for (size_t i = 0; i < swapChainImageViews.size(); i++) {
-    VkImageView attachments[] = {
-        swapChainImageViews[i]};
+    std::array<VkImageView, 2> attachments = {
+      swapChainImageViews[i],
+      depthImageView
+    };
 
     VkFramebufferCreateInfo framebufferInfo{};
     framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    framebufferInfo.renderPass      = this->renderPass;
-    framebufferInfo.attachmentCount = 1;
-    framebufferInfo.pAttachments    = attachments;
+    framebufferInfo.renderPass      = renderPass;
+    framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+    framebufferInfo.pAttachments    = attachments.data();
     framebufferInfo.width           = swapChainExtent.width;
     framebufferInfo.height          = swapChainExtent.height;
     framebufferInfo.layers          = 1;
@@ -309,6 +335,50 @@ VkPresentModeKHR SwapChain::chooseSwapPresentMode(const std::vector<VkPresentMod
   else {
     return VK_PRESENT_MODE_IMMEDIATE_KHR;
   }
+}
+
+// Depth configuration.
+
+void SwapChain::createDepthResources(VkDevice device, VkPhysicalDevice physicalDevice, 
+                                     VkQueue graphicsQueue, VkCommandPool commandPool)
+{
+  VkFormat depthFormat = findDepthFormat(physicalDevice);
+  
+  Utils::createImage(device, physicalDevice, swapChainExtent.width, swapChainExtent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
+  this->depthImageView = Utils::createImageView(device, depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+
+  Utils::transitionImageLayout(device, graphicsQueue, commandPool, 
+                               depthImage, depthFormat, 
+                               VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+}
+
+// Takes a list of candidate formats in order from most desirable to least desirable, and checks which is the first one that is supported.
+VkFormat SwapChain::findSupportedFormat(VkPhysicalDevice physicalDevice, const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
+{
+  // The support of a format depends on the tiling mode and usage, so we must also include these as parameters.
+  for (VkFormat format : candidates) {
+    VkFormatProperties props;
+    vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &props);
+
+    if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
+      return format;
+    } 
+    else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
+      return format;
+    }
+  }
+
+  throw std::runtime_error("Error: Failed to find supported format.\n");
+}
+
+// Helper function to select a format with a depth component that supports usage as depth attachment.
+VkFormat SwapChain::findDepthFormat(VkPhysicalDevice physicalDevice)
+{
+  return findSupportedFormat(physicalDevice,
+      {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
+      VK_IMAGE_TILING_OPTIMAL,
+      VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
+  );
 }
 
 // Getters and Setters

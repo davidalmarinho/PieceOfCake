@@ -50,14 +50,20 @@ void Renderer::loadModels()
 {
   const std::vector<Model::Vertex> vertices = {
     //  X      Y       R     G     B       U     V
-    {{-0.5f, -0.5f}, {1.0f, 0.0f, 1.0f}, {1.0f, 0.0f}}, // Top Left Corner
-    {{ 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}}, // Top Right Corner
-    {{ 0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}}, // Bottom Right Corner
-    {{-0.5f,  0.5f}, {1.0f, 1.0f, 0.0f}, {1.0f, 1.0f}}  // Bottom Left Corner
+    {{-0.5f, -0.5f,  0.0f}, {1.0f, 0.0f, 1.0f}, {1.0f, 0.0f}}, // Top Left Corner
+    {{ 0.5f, -0.5f,  0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}}, // Top Right Corner
+    {{ 0.5f,  0.5f,  0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}}, // Bottom Right Corner
+    {{-0.5f,  0.5f,  0.0f}, {1.0f, 1.0f, 0.0f}, {1.0f, 1.0f}}, // Bottom Left Corner
+
+    {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+    {{ 0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+    {{ 0.5f,  0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+    {{-0.5f,  0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
   };
 
   const std::vector<uint16_t> indices = {
-    0, 1, 2, 2, 3, 0
+    0, 1, 2, 2, 3, 0,
+    4, 5, 6, 6, 7, 4
   };
 
   this->model = std::make_unique<Model>(vertices, indices);
@@ -76,8 +82,10 @@ void Renderer::initVulkan()
   this->swapChain = std::make_unique<SwapChain>(physicalDevice, device, surface);
   this->pipeline = std::make_unique<Pipeline>(device, swapChain->getRenderPass());
   this->pipeline->createGraphicsPipeline(device, swapChain->getSwapChainImageFormat(), swapChain->getRenderPass());
-  this->swapChain->createFramebuffers(device);
   createCommandPool();
+
+  this->swapChain->createDepthResources(device, physicalDevice, graphicsQueue, commandPool);
+  this->swapChain->createFramebuffers(device);
 
   // TODO: For texture test purposes. Remove it when isn't needed anymore.
   this->testTexture = std::make_unique<Texture>(device);
@@ -234,7 +242,7 @@ void Renderer::recreateSwapChain()
   }
   vkDeviceWaitIdle(device);
 
-  this->swapChain->recreateSwapChain(physicalDevice, device, surface);
+  this->swapChain->recreateSwapChain(device, physicalDevice, graphicsQueue, commandPool, surface);
 }
 
 void Renderer::createCommandPool()
@@ -292,9 +300,12 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
   renderPassInfo.renderArea.offset = {0, 0};
   renderPassInfo.renderArea.extent = swapChain->getSwapChainExtent();
 
-  VkClearValue clearColor        = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
-  renderPassInfo.clearValueCount = 1;
-  renderPassInfo.pClearValues    = &clearColor;
+  std::array<VkClearValue, 2> clearValues{};
+  clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+  clearValues[1].depthStencil = {1.0f, 0};
+
+  renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+  renderPassInfo.pClearValues = clearValues.data();
 
   vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 

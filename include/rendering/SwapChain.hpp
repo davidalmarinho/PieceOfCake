@@ -26,6 +26,12 @@ class SwapChain
   std::vector<VkImageView> swapChainImageViews;
   std::vector<VkFramebuffer> swapChainFramebuffers;
 
+  // Depth image and view configuration.
+  VkImage depthImage;
+  VkDeviceMemory depthImageMemory;
+  VkImageView depthImageView;
+
+
   /**
    * We'll need one semaphore to signal that an image has been acquired from the swapchain and is ready for rendering,
    * another one to signal that rendering has finished and presentation can happen, and a fence to make sure only one frame is rendering at a time.
@@ -40,6 +46,10 @@ class SwapChain
 
   // Cache
   VkDevice cachedDevice;
+
+  // Depth Configuration
+  VkFormat findSupportedFormat(VkPhysicalDevice physicalDevice, const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+  VkFormat findDepthFormat(VkPhysicalDevice physicalDevice);
 
 public:
   SwapChain(VkPhysicalDevice physicalDevice, VkDevice device, VkSurfaceKHR surface);
@@ -58,10 +68,12 @@ public:
 
   
   void createSwapChain(VkPhysicalDevice physicalDevice, VkDevice device, VkSurfaceKHR surface);
-  void recreateSwapChain(VkPhysicalDevice physicalDevice, VkDevice device, VkSurfaceKHR surface);
+  void recreateSwapChain(VkDevice device, VkPhysicalDevice physicalDevice, 
+                         VkQueue graphicsQueue, VkCommandPool commandPool, VkSurfaceKHR surface);
   void createImageViews(VkDevice device);
-  // void createDepthResources();
-  void createRenderPass(VkDevice device);
+  void createDepthResources(VkDevice device, VkPhysicalDevice physicalDevice, 
+                            VkQueue graphicsQueue, VkCommandPool commandPool);
+  void createRenderPass(VkDevice device, VkPhysicalDevice physicalDevice);
   void createFramebuffers(VkDevice device);
   void createSyncObjects(VkDevice device);
   void restartSwapChain(VkDevice device);

@@ -18,5 +18,18 @@ namespace Utils
   void endSingleTimeCommands(VkDevice device, VkQueue graphicsQueue, 
                                   VkCommandPool commandPool, VkCommandBuffer commandBuffer);
   
-  VkImageView createImageView(VkDevice device, VkImage image, VkFormat format);
+  VkImageView createImageView(VkDevice device, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+
+  void createImage(VkDevice device, VkPhysicalDevice physicalDevice,
+                   uint32_t texWidth, uint32_t texHeight, VkFormat format, 
+                   VkImageTiling tiling, VkImageUsageFlags usage, 
+                   VkMemoryPropertyFlags properties, VkImage& image, 
+                   VkDeviceMemory& imageMemory);
+
+  void transitionImageLayout(VkDevice device, VkQueue graphicsQueue, 
+                             VkCommandPool commandPool, VkImage image, 
+                             VkFormat format, VkImageLayout oldLayout, 
+                             VkImageLayout newLayout);
+
+  bool hasStencilComponent(VkFormat format);
 }
