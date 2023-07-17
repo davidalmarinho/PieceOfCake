@@ -2,12 +2,12 @@
 #include <iostream>
 #include <fstream>
 
-void AssetPool::addShader(const std::string resourceID, const std::string fragmentShaderPath, const std::string vertexShaderPath)
+void AssetPool::addShader(VkDevice device, const std::string resourceID, const std::string fragmentShaderPath, const std::string vertexShaderPath)
 {
 	// Add to hash map if it is empty --because if it is empty it is certain
 	// that the shader path hasn't been added yet.
 	if (AssetPool::shadersMap.empty()) {
-		std::shared_ptr<Shader> shader = std::make_shared<Shader>(fragmentShaderPath, vertexShaderPath);
+		std::shared_ptr<Shader> shader = std::make_shared<Shader>(device, fragmentShaderPath, vertexShaderPath);
 		AssetPool::shadersMap.insert({ resourceID, shader });
 		return;
 	}
@@ -32,7 +32,7 @@ void AssetPool::addShader(const std::string resourceID, const std::string fragme
 #endif
 	
 	// The shader wasn't be
-	std::shared_ptr<Shader> shader = std::make_shared<Shader>(fragmentShaderPath, vertexShaderPath);
+	std::shared_ptr<Shader> shader = std::make_shared<Shader>(device, fragmentShaderPath, vertexShaderPath);
 	AssetPool::shadersMap.insert({ resourceID, shader });
 }
 

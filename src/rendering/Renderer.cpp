@@ -70,7 +70,9 @@ void Renderer::initVulkan()
   Engine::get()->getWindow()->createSurface(this->vkInstance, &this->surface);
   pickPhysicalDevice();
   createLogicalDevice();
-  // AssetPool::addShader("triangle_shader", "shaders/triangle_fragment_shader.spv", "shaders/triangle_vertex_shader.spv");
+
+  AssetPool::addShader(device, "texture", "shaders/texture_fragment_shader.spv", "shaders/texture_vertex_shader.spv");
+
   this->swapChain = std::make_unique<SwapChain>(physicalDevice, device, surface);
   this->pipeline = std::make_unique<Pipeline>(device, swapChain->getRenderPass());
   this->pipeline->createGraphicsPipeline(device, swapChain->getSwapChainImageFormat(), swapChain->getRenderPass());

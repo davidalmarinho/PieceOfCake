@@ -3,8 +3,8 @@
 #include "Engine.hpp"
 #include "Utils.hpp"
 
-Shader::Shader(const std::string fragmentShaderFilepath, const std::string vertexShaderFilepath) : 
-  fragmentShaderFilepath(fragmentShaderFilepath), vertexShaderFilepath(vertexShaderFilepath)
+Shader::Shader(VkDevice device, const std::string fragmentShaderFilepath, const std::string vertexShaderFilepath) : 
+  cachedDevice(device), fragmentShaderFilepath(fragmentShaderFilepath), vertexShaderFilepath(vertexShaderFilepath)
 {
   auto vertShaderCode = AssetPool::readFile(vertexShaderFilepath);
   auto fragShaderCode = AssetPool::readFile(fragmentShaderFilepath);
@@ -13,8 +13,8 @@ Shader::Shader(const std::string fragmentShaderFilepath, const std::string verte
 Shader::~Shader()
 {
   for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-    vkDestroyBuffer(Engine::get()->getRenderer()->getDevice(), uniformBuffers[i], nullptr);
-    vkFreeMemory(Engine::get()->getRenderer()->getDevice(), uniformBuffersMemory[i], nullptr);
+    vkDestroyBuffer(cachedDevice, uniformBuffers[i], nullptr);
+    vkFreeMemory(cachedDevice, uniformBuffersMemory[i], nullptr);
   }
 }
 

@@ -23,7 +23,7 @@ public:
     alignas (16) glm::mat4 proj;
   };
 
-  Shader(const std::string fragmentShaderFilepath, const std::string vertexShaderFilepath);
+  Shader(VkDevice device, const std::string fragmentShaderFilepath, const std::string vertexShaderFilepath);
   ~Shader();
 
   VkShaderModule compile(VkDevice device, const std::vector<char> &code);
@@ -41,9 +41,11 @@ private:
   const std::string fragmentShaderFilepath;
   const std::string vertexShaderFilepath;
 
-  // For uniform buffers --shaders' global constants
+  // For uniform buffers --shaders' global constants.
   std::vector<VkBuffer> uniformBuffers;
   std::vector<VkDeviceMemory> uniformBuffersMemory;
   std::vector<void*> uniformBuffersMapped;
 
+  // Cache.
+  VkDevice cachedDevice;
 };

@@ -37,7 +37,6 @@ private:
 public:
   void init();
   void run();
-  void loadAssets();
   void attachWindow(std::unique_ptr<Window> window);
   void attachRenderer(std::unique_ptr<Renderer> renderer);
 
