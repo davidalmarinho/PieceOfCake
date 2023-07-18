@@ -30,7 +30,7 @@ void Renderer::init()
 Renderer::~Renderer()
 {
   this->swapChain.reset();
-  this->testTexture.reset();
+  AssetPool::cleanTextures();
   this->pipeline.reset();
   this->model.reset();
 
@@ -77,6 +77,7 @@ void Renderer::initVulkan()
   pickPhysicalDevice();
   createLogicalDevice();
 
+  AssetPool::addTexture(device, "img_tex", "assets/textures/img.jpg");
   AssetPool::addShader(device, "texture", "shaders/texture_fragment_shader.spv", "shaders/texture_vertex_shader.spv");
 
   this->swapChain = std::make_unique<SwapChain>(physicalDevice, device, surface);
@@ -87,18 +88,17 @@ void Renderer::initVulkan()
   this->swapChain->createDepthResources(device, physicalDevice, graphicsQueue, commandPool);
   this->swapChain->createFramebuffers(device);
 
-  // TODO: For texture test purposes. Remove it when isn't needed anymore.
-  this->testTexture = std::make_unique<Texture>(device);
-  this->testTexture->createTextureImage(device, physicalDevice, graphicsQueue, commandPool);
-  this->testTexture->createTextureImageView(device);
-  this->testTexture->createTextureSampler(device, physicalDevice);
+  std::shared_ptr<Texture> tex = AssetPool::getTexture("img_tex");
+  tex->createTextureImage(device, physicalDevice, graphicsQueue, commandPool);
+  tex->createTextureImageView(device);
+  tex->createTextureSampler(device, physicalDevice);
 
   this->loadModels();
 
   std::shared_ptr<Shader> shader = AssetPool::getShader("texture");
   shader->createUniformBuffers();
   this->pipeline->getDescriptorLayout()->createDescriptorPool();
-  this->pipeline->getDescriptorLayout()->createDescriptorSets(shader.get(), testTexture.get());
+  this->pipeline->getDescriptorLayout()->createDescriptorSets(shader.get(), tex.get());
 
   createCommandBuffers();
   this->swapChain->createSyncObjects(device);

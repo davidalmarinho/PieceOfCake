@@ -7,4 +7,5 @@ target_include_directories(utils
 	PRIVATE
 	"${PROJECT_SOURCE_DIR}/include/utils/"
 	"${PROJECT_SOURCE_DIR}/include/rendering/"
+	"${PROJECT_SOURCE_DIR}/include/rendering/textures/"
 )

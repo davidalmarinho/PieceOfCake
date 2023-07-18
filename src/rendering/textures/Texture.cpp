@@ -5,7 +5,7 @@
 #include "stb_image.h"
 #include "Utils.hpp"
 
-Texture::Texture(VkDevice device) : cachedDevice(device)
+Texture::Texture(VkDevice device, const std::string filepath) : cachedDevice(device), filepath(filepath)
 {
 
 }
@@ -23,11 +23,11 @@ void Texture::createTextureImage(VkDevice device, VkPhysicalDevice physicalDevic
                                  VkQueue graphicsQueue, VkCommandPool commandPool)
 {
   int texWidth, texHeight, texChannels;
-  stbi_uc* pixels = stbi_load("assets/img.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+  stbi_uc* pixels = stbi_load(filepath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
   VkDeviceSize imageSize = texWidth * texHeight * 4;
 
   if (!pixels) {
-    throw std::runtime_error("Error: Failed to load texture image.\n");
+    throw std::runtime_error("Error: Failed to load texture image: '" + this->filepath + "'.\n");
   }
 
   // Create a buffer in host visible memory so that we can use vkMapMemory and copy the pixels to it.
@@ -171,4 +171,9 @@ VkImageView Texture::getTextureImageView()
 VkSampler Texture::getTextureSampler()
 {
   return this->textureSampler;
+}
+
+const std::string Texture::getFilepath()
+{
+  return this->filepath;
 }

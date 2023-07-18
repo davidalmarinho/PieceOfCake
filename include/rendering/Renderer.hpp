@@ -45,9 +45,6 @@ public:
   void init();
   void drawFrame();
 
-  // TODO: Tmp test variable. Remove it later
-  std::unique_ptr<Texture> testTexture;
-
   // Getters and Setters
 
   VkDevice getDevice();

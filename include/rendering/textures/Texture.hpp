@@ -5,6 +5,7 @@
 class Texture
 {
 private:
+  const std::string filepath;
   VkImage textureImage;
   VkDeviceMemory textureImageMemory;
   VkImageView textureImageView;
@@ -19,7 +20,7 @@ private:
                                 uint32_t width, uint32_t height);
 
 public:
-  Texture(VkDevice device);
+  Texture(VkDevice device, const std::string filepath);
   ~Texture();
   void createTextureImage(VkDevice device, VkPhysicalDevice physicalDevice, 
                                  VkQueue graphicsQueue, VkCommandPool commandPool);
@@ -30,4 +31,5 @@ public:
 
   VkImageView getTextureImageView();
   VkSampler getTextureSampler();
+  const std::string getFilepath();
 };
