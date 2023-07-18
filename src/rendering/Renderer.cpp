@@ -1,5 +1,10 @@
+#include <unordered_map>
+
 #include "Renderer.hpp"
 #include "Engine.hpp"
+
+#define TINYOBJLOADER_IMPLEMENTATION
+#include "tiny_obj_loader.h"
 
 Renderer::Renderer()
 {
@@ -48,7 +53,7 @@ Renderer::~Renderer()
 
 void Renderer::loadModels()
 {
-  const std::vector<Model::Vertex> vertices = {
+  /*const std::vector<Model::Vertex> vertices = {
     //  X      Y       R     G     B       U     V
     {{-0.5f, -0.5f,  0.0f}, {1.0f, 0.0f, 1.0f}, {1.0f, 0.0f}}, // Top Left Corner
     {{ 0.5f, -0.5f,  0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}}, // Top Right Corner
@@ -64,7 +69,65 @@ void Renderer::loadModels()
   const std::vector<uint16_t> indices = {
     0, 1, 2, 2, 3, 0,
     4, 5, 6, 6, 7, 4
-  };
+  };*/
+
+  std::vector<Model::Vertex> vertices;
+  std::vector<uint32_t> indices;
+
+  const std::string MODEL_PATH = "assets/models/viking_room.obj";
+
+  /* The attrib container holds all of the positions, normals and texture 
+   * coordinates in its attrib.vertices, attrib.normals and attrib.texcoords 
+   * vectors. The shapes container contains all of the separate objects and 
+   * their faces. Each face consists of an array of vertices, and each vertex 
+   * contains the indices of the position, normal and texture coordinate attributes.
+   */
+  tinyobj::attrib_t attrib;
+  std::vector<tinyobj::shape_t> shapes;
+  std::vector<tinyobj::material_t> materials;
+  std::string warn, err;
+
+  if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, MODEL_PATH.c_str())) {
+    throw std::runtime_error(warn + err);
+  }
+
+  std::unordered_map<Model::Vertex, uint32_t> uniqueVertices{};
+
+  for (const auto& shape : shapes) {
+    for (const auto& index : shape.mesh.indices) {
+      Model::Vertex vertex{};
+
+      vertex.pos = {
+        // Multiply the index by 3 because the vertices is an array of positions
+        // that is [X, Y, Z, X, Y, Z, X, Y, Z ...] and, by this way, we can access
+        // to x, y and z coordinates.
+        attrib.vertices[3 * index.vertex_index + 0],
+        attrib.vertices[3 * index.vertex_index + 1],
+        attrib.vertices[3 * index.vertex_index + 2]
+      };
+
+      // Flip the vertical component of the texture coordinates because 
+      // we haveve uploaded the image into Vulkan in a top to bottom orientation.
+      vertex.texCoords = {
+        attrib.texcoords[2 * index.texcoord_index + 0],
+        1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
+      };
+
+      vertex.color = {1.0f, 1.0f, 1.0f};
+
+      /**
+       * Every time we read a vertex from the OBJ file, we will check if it was already 
+       * seen a vertex with the exact same position and texture coordinates before. 
+       * If not, we add it to vertices and store its index in the uniqueVertices container. 
+       */
+      if (uniqueVertices.count(vertex) == 0) {
+        uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
+        vertices.push_back(vertex);
+      }
+
+      indices.push_back(uniqueVertices[vertex]);
+    }
+  }
 
   this->model = std::make_unique<Model>(vertices, indices);
 }
@@ -77,7 +140,7 @@ void Renderer::initVulkan()
   pickPhysicalDevice();
   createLogicalDevice();
 
-  AssetPool::addTexture(device, "img_tex", "assets/textures/img.jpg");
+  AssetPool::addTexture(device, "img_tex", "assets/textures/viking_room.png");
   AssetPool::addShader(device, "texture", "shaders/texture_fragment_shader.spv", "shaders/texture_vertex_shader.spv");
 
   this->swapChain = std::make_unique<SwapChain>(physicalDevice, device, surface);

@@ -21,6 +21,7 @@ target_include_directories(rendering
 	"${PROJECT_SOURCE_DIR}/include/input_device/"
 	"${PROJECT_SOURCE_DIR}/include/main/"
 	"${PROJECT_SOURCE_DIR}/include/utils/"
+	"${PROJECT_SOURCE_DIR}/include/tiny_obj_loader/"
 )
 
 target_link_libraries(rendering

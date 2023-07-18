@@ -1,9 +1,12 @@
 #pragma once
 
+#define GLM_ENABLE_EXPERIMENTAL
+
 #include <vector>
 #include <glm/glm.hpp>
 #include <vulkan/vulkan.h>
 #include <array>
+#include <glm/gtx/hash.hpp>
 
 class Model
 {
@@ -21,9 +24,11 @@ public:
     // originating from a binding description. We have three attributes: position;
     // color and texture coordinates. So we need three attribute description structs.
     static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions();
+
+    bool operator==(const Vertex& other) const;
   };
 
-  Model(const std::vector<Vertex> &vertices, std::vector<uint16_t> indices);
+  Model(const std::vector<Vertex> &vertices, std::vector<uint32_t> indices);
   ~Model();
 
   void bind(VkCommandBuffer commandBuffer);
@@ -51,5 +56,15 @@ private:
   VkDevice cachedDevice;
 
   void createVertexBuffer(const std::vector<Model::Vertex> &vertices);
-  void createIndexBuffer(const std::vector<uint16_t> indices);
+  void createIndexBuffer(const std::vector<uint32_t> indices);
 };
+
+namespace std {
+  template<> struct hash<Model::Vertex> {
+    size_t operator()(Model::Vertex const& vertex) const {
+      return ((hash<glm::vec3>()(vertex.pos) ^
+        (hash<glm::vec3>()(vertex.color) << 1)) >> 1) ^
+        (hash<glm::vec2>()(vertex.texCoords) << 1);
+    }
+  };
+}

@@ -7,7 +7,7 @@
 #include <cstring>
 #include <stdexcept>
 
-Model::Model(const std::vector<Vertex> &vertices,  std::vector<uint16_t> indices) : cachedDevice(Engine::get()->getRenderer()->getDevice())
+Model::Model(const std::vector<Vertex> &vertices,  std::vector<uint32_t> indices) : cachedDevice(Engine::get()->getRenderer()->getDevice())
 {
   this->createVertexBuffer(vertices);
   this->createIndexBuffer(indices);
@@ -56,7 +56,7 @@ void Model::createVertexBuffer(const std::vector<Vertex> &vertices)
   vkFreeMemory(device, stagingBufferMemory, nullptr);
 }
 
-void Model::createIndexBuffer(const std::vector<uint16_t> indices)
+void Model::createIndexBuffer(const std::vector<uint32_t> indices)
 {
   VkDevice device  = Engine::get()->getRenderer()->getDevice();
   VkPhysicalDevice physicalDevice = Engine::get()->getRenderer()->getPhysicalDevice();
@@ -126,13 +126,18 @@ std::array<VkVertexInputAttributeDescription, 3> Model::Vertex::getAttributeDesc
   return attributeDescriptions;
 }
 
+bool Model::Vertex::operator==(const Model::Vertex& other) const
+{
+  return pos == other.pos && color == other.color && texCoords == other.texCoords;
+}
+
 void Model::bind(VkCommandBuffer commandBuffer)
 {
   VkBuffer vertexBuffers[] = {this->vertexBuffer};
   VkDeviceSize offsets[] = {0};
   vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets); // Bind vertex buffers to bindings.
-  vkCmdBindIndexBuffer(commandBuffer, this->indexBuffer, 0, VK_INDEX_TYPE_UINT16); // Bind index buffers.
-                                                         // Or VK_INDEX_TYPE_UINT32
+  vkCmdBindIndexBuffer(commandBuffer, this->indexBuffer, 0, VK_INDEX_TYPE_UINT32); // Bind index buffers.
+                                                         // VK_INDEX_TYPE_UINT16 or VK_INDEX_TYPE_UINT32
                                                          // depending the type of the
                                                          // indices.
 }
