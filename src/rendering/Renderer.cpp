@@ -134,6 +134,10 @@ void Renderer::loadModels()
 
 void Renderer::initVulkan()
 {
+  // TODO: Possible toggle mipmapping during running.
+  // TODO: There are 3 types of mipmapping: Nearest, Linear and disabled!!!
+  this->isMipmapping = false;
+
   createInstance();
   this->vulkanDebugger = std::make_unique<VulkanDebugger>(this->vkInstance);
   Engine::get()->getWindow()->createSurface(this->vkInstance, &this->surface);

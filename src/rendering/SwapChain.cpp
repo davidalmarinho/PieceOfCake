@@ -161,7 +161,7 @@ void SwapChain::createImageViews(VkDevice device)
 
   for (size_t i = 0; i < swapChainImages.size(); i++) {
     swapChainImageViews[i] = Utils::createImageView(device, swapChainImages[i], 
-                                                    swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
+                                                    swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
   }
 }
 
@@ -344,12 +344,12 @@ void SwapChain::createDepthResources(VkDevice device, VkPhysicalDevice physicalD
 {
   VkFormat depthFormat = findDepthFormat(physicalDevice);
   
-  Utils::createImage(device, physicalDevice, swapChainExtent.width, swapChainExtent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
-  this->depthImageView = Utils::createImageView(device, depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+  Utils::createImage(device, physicalDevice, swapChainExtent.width, swapChainExtent.height, 1, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
+  this->depthImageView = Utils::createImageView(device, depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
 
   Utils::transitionImageLayout(device, graphicsQueue, commandPool, 
                                depthImage, depthFormat, 
-                               VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+                               VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1);
 }
 
 // Takes a list of candidate formats in order from most desirable to least desirable, and checks which is the first one that is supported.

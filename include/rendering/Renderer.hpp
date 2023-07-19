@@ -42,6 +42,10 @@ class Renderer
 public:
   Renderer();
   ~Renderer();
+
+  // Graphics settings configuration.
+  bool isMipmapping;
+
   void init();
   void drawFrame();
 

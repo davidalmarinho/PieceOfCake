@@ -10,6 +10,9 @@ private:
   VkDeviceMemory textureImageMemory;
   VkImageView textureImageView;
   VkSampler textureSampler;
+
+  // Mipmaping config.
+  uint32_t mipLevels;
   
   // Cache
   VkDevice cachedDevice;
@@ -19,6 +22,9 @@ private:
                                 VkBuffer buffer, VkImage image, 
                                 uint32_t width, uint32_t height);
 
+  void generateMipmaps(VkDevice device, VkPhysicalDevice physicalDevice, VkQueue graphicsQueue, VkCommandPool commandPool,
+                       VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
+
 public:
   Texture(VkDevice device, const std::string filepath);
   ~Texture();
@@ -26,6 +32,8 @@ public:
                                  VkQueue graphicsQueue, VkCommandPool commandPool);
   void createTextureImageView(VkDevice device);
   void createTextureSampler(VkDevice device, VkPhysicalDevice physicalDevice);
+
+  void cleanTexture();
 
   // Getters and Setters
 

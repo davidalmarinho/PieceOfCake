@@ -10,7 +10,7 @@ void Utils::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
 {
   VkBufferCreateInfo bufferInfo{};
   bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-  bufferInfo.size = size; // Specify the size of the buffer in bytes.
+  bufferInfo.size = size;   // Specify the size of the buffer in bytes.
   bufferInfo.usage = usage; // Indicate for which purposes the data in the buffer is going to be used. 
   bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE; // Buffers can also be 
                                                       // owned by a specific 
@@ -121,7 +121,7 @@ void Utils::copyBuffer(VkDevice device, VkCommandPool commandPool, VkQueue graph
   endSingleTimeCommands(device, graphicsQueue, commandPool, commandBuffer);
 }
 
-VkImageView Utils::createImageView(VkDevice device, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags)
+VkImageView Utils::createImageView(VkDevice device, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels)
 {
   VkImageViewCreateInfo viewInfo{};
   viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -138,7 +138,7 @@ VkImageView Utils::createImageView(VkDevice device, VkImage image, VkFormat form
   // purpose is and which part of the image should be accessed.
   viewInfo.subresourceRange.aspectMask     = aspectFlags;
   viewInfo.subresourceRange.baseMipLevel   = 0;
-  viewInfo.subresourceRange.levelCount     = 1;
+  viewInfo.subresourceRange.levelCount     = mipLevels;
   viewInfo.subresourceRange.baseArrayLayer = 0;
   viewInfo.subresourceRange.layerCount     = 1;
 
@@ -159,7 +159,7 @@ VkImageView Utils::createImageView(VkDevice device, VkImage image, VkFormat form
 }
 
 void Utils::createImage(VkDevice device, VkPhysicalDevice physicalDevice,
-                 uint32_t width, uint32_t height, VkFormat format, 
+                 uint32_t width, uint32_t height, uint32_t mipLevels, VkFormat format, 
                  VkImageTiling tiling, VkImageUsageFlags usage, 
                  VkMemoryPropertyFlags properties, VkImage& image, 
                  VkDeviceMemory& imageMemory)
@@ -171,7 +171,7 @@ void Utils::createImage(VkDevice device, VkPhysicalDevice physicalDevice,
   imageInfo.extent.width  = static_cast<uint32_t>(width);
   imageInfo.extent.height = static_cast<uint32_t>(height);
   imageInfo.extent.depth  = 1;
-  imageInfo.mipLevels     = 1;
+  imageInfo.mipLevels     = mipLevels;
   imageInfo.arrayLayers   = 1;
 
   // Use the same format for the texels as the pixels in the buffer, otherwise the copy operation will fail.
@@ -219,7 +219,7 @@ void Utils::createImage(VkDevice device, VkPhysicalDevice physicalDevice,
 void Utils::transitionImageLayout(VkDevice device, VkQueue graphicsQueue, 
                                     VkCommandPool commandPool, VkImage image, 
                                     VkFormat format, VkImageLayout oldLayout, 
-                                    VkImageLayout newLayout)
+                                    VkImageLayout newLayout, uint32_t mipLevels)
 {
   VkCommandBuffer commandBuffer = Utils::beginSingleTimeCommands(device, commandPool);
 
@@ -240,15 +240,15 @@ void Utils::transitionImageLayout(VkDevice device, VkQueue graphicsQueue,
     barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 
     if (Utils::hasStencilComponent(format)) {
-        barrier.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+      barrier.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
     }
   } 
   else {
-      barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
   }
 
   barrier.subresourceRange.baseMipLevel   = 0;
-  barrier.subresourceRange.levelCount     = 1;
+  barrier.subresourceRange.levelCount     = mipLevels;
   barrier.subresourceRange.baseArrayLayer = 0;
   barrier.subresourceRange.layerCount     = 1;
 
