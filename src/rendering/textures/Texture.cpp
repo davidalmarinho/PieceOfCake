@@ -59,7 +59,7 @@ void Texture::createTextureImage(VkDevice device, VkPhysicalDevice physicalDevic
   // Clean up the original pixel array.
   stbi_image_free(pixels);
 
-  Utils::createImage(device, physicalDevice, texWidth, texHeight, mipLevels, VK_FORMAT_R8G8B8A8_SRGB, 
+  Utils::createImage(device, physicalDevice, texWidth, texHeight, mipLevels, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R8G8B8A8_SRGB, 
               VK_IMAGE_TILING_OPTIMAL, 
               VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, 
               VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);

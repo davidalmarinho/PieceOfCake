@@ -61,13 +61,36 @@ void Engine::printOS()
 #endif
 }
 
+void Engine::toggleGraphicsSettings()
+{
+  // Toggle mipmap setting
+  if (KeyListener::isBindDown(GLFW_KEY_LEFT_SHIFT, GLFW_KEY_F1)) {
+    this->renderer->mipmapSetting++;
+    std::cout << "Mipmap setting changed to '" << this->renderer->mipmapSetting << "'.\n";
+    this->renderer->restart();
+  }
+  // Iterate MSAA settings.
+  else if (KeyListener::isBindDown(GLFW_KEY_LEFT_SHIFT, GLFW_KEY_F2)) {
+    this->renderer->msaaSetting++;
+    std::cout << "MSAA setting changed to '" << this->renderer->msaaSetting << "'.\n";
+    this->renderer->restart();
+  }
+  else if (KeyListener::isBindDown(GLFW_KEY_LEFT_SHIFT, GLFW_KEY_F3)) {
+    this->renderer->sampleShading = !this->renderer->sampleShading;
+    std::cout << "Sample shading setting changed to '" << this->renderer->sampleShading << "'.\n";
+    this->renderer->restart();
+  }
+}
+
 void Engine::printDevKeyBinds()
 {
-
   std::cout << "╭──────────────────────────────────────────────────────────────────────────╮\n";
   std::cout << "  Useful developer keybindings:\n";
-  std::cout << "    SHIFT + F1 -> Toggles Mipmap setting (DISABLED, LINEAR, NEAREST).";
-  std::cout << "\n╰──────────────────────────────────────────────────────────────────────────╯\n";
+  std::cout << "    SHIFT + F1 -> Toggles Mipmap setting (DISABLED, LINEAR, NEAREST).\n";
+  std::cout << "    SHIFT + F2 -> Iterates MSAA settings (DISABLED, MSAA2X, MSAA4X,\n";
+  std::cout << "                  MSAA8X, MSAA16X, MSAA32X, MSAA64X).\n";
+  std::cout << "    SHIFT + F3 -> Toggles Sample Shading setting (False, True).\n";
+  std::cout << "╰──────────────────────────────────────────────────────────────────────────╯\n";
 }
 
 void Engine::mainLoop()
@@ -96,12 +119,7 @@ void Engine::mainLoop()
       KeyListener::update();
       glfwPollEvents();
 
-      // Toggle mipmap setting
-      if (KeyListener::isBindDown(GLFW_KEY_LEFT_SHIFT, GLFW_KEY_F1)) {
-        this->renderer->mipmapSetting++;
-        std::cout << "Mipmap setting changed to '" << this->renderer->mipmapSetting << "'\n";
-        this->renderer->restart();
-      }
+      this->toggleGraphicsSettings();
 
       // Call engine logic
       accumulator = 0.0f;

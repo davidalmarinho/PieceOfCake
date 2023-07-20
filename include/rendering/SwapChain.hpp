@@ -31,6 +31,10 @@ private:
   VkDeviceMemory depthImageMemory;
   VkImageView depthImageView;
 
+  // MSAA color drawing.
+  VkImage colorImage;
+  VkDeviceMemory colorImageMemory;
+  VkImageView colorImageView;
 
   /**
    * We'll need one semaphore to signal that an image has been acquired from the swapchain and is ready for rendering,
@@ -41,20 +45,21 @@ private:
   std::vector<VkFence> inFlightFences;
   std::vector<VkFence> imagesInFlight;
 
-  void clean();
+  void clean(VkDevice device, VkSampleCountFlagBits msaaSample);
 
   VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats);
   VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes);
 
   // Cache
   VkDevice cachedDevice;
+  VkSampleCountFlagBits cachedMsaaSample;
 
   // Depth Configuration
   VkFormat findSupportedFormat(VkPhysicalDevice physicalDevice, const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
   VkFormat findDepthFormat(VkPhysicalDevice physicalDevice);
 
 public:
-  SwapChain(VkPhysicalDevice physicalDevice, VkDevice device, VkSurfaceKHR surface);
+  SwapChain(VkPhysicalDevice physicalDevice, VkDevice device, VkSurfaceKHR surface, VkSampleCountFlagBits numMsaaSamples);
   ~SwapChain();
 
   size_t currentFrame = 0;
@@ -71,14 +76,19 @@ public:
   
   void createSwapChain(VkPhysicalDevice physicalDevice, VkDevice device, VkSurfaceKHR surface);
   void recreateSwapChain(VkDevice device, VkPhysicalDevice physicalDevice, 
-                         VkQueue graphicsQueue, VkCommandPool commandPool, VkSurfaceKHR surface);
+                         VkQueue graphicsQueue, VkCommandPool commandPool, VkSurfaceKHR surface,
+                         VkSampleCountFlagBits msaaSamples);
   void createImageViews(VkDevice device);
+  void createColorResources(VkDevice device, VkPhysicalDevice physicalDevice, 
+                            VkSampleCountFlagBits numMsaaSamples);
   void createDepthResources(VkDevice device, VkPhysicalDevice physicalDevice, 
-                            VkQueue graphicsQueue, VkCommandPool commandPool);
-  void createRenderPass(VkDevice device, VkPhysicalDevice physicalDevice);
-  void createFramebuffers(VkDevice device);
+                            VkQueue graphicsQueue, VkCommandPool commandPool, 
+                            VkSampleCountFlagBits numMsaaSamples);
+  void createRenderPass(VkDevice device, VkPhysicalDevice physicalDevice, 
+                        VkSampleCountFlagBits numMsaaSamples);
+  void createFramebuffers(VkDevice device, VkSampleCountFlagBits msaaSample);
   void createSyncObjects(VkDevice device);
-  void restartSwapChain(VkDevice device);
+  void restartSwapChain(VkDevice device, VkSampleCountFlagBits msaaSample);
 
   // Helper functions
 

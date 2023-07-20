@@ -18,6 +18,7 @@ private:
   void processMemUsage(double& vm_usage, double& resident_set);
   void printOS();
   void printDevKeyBinds();
+  void toggleGraphicsSettings();
   void mainLoop();
 
   // TODO: Put this in an Utils file.

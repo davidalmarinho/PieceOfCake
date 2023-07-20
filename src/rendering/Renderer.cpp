@@ -38,6 +38,130 @@ std::ostream& operator<<(std::ostream& os, Renderer::MipmapSetting mipmapSetting
   }
 }
 
+Renderer::MsaaSetting operator++(Renderer::MsaaSetting& msaaSetting, int)
+{
+  switch(msaaSetting) {
+    case Renderer::MsaaSetting::DISABLED:
+      if (static_cast<int>(Engine::get()->getRenderer()->maxMsaaSamples) == static_cast<int>(Renderer::MsaaSetting::DISABLED)) {
+        msaaSetting = Renderer::MsaaSetting::DISABLED;
+        break;
+      }
+      msaaSetting = Renderer::MsaaSetting::MSAA2X;
+      break;
+    case Renderer::MsaaSetting::MSAA2X:
+      if (static_cast<int>(Engine::get()->getRenderer()->maxMsaaSamples) == static_cast<int>(Renderer::MsaaSetting::MSAA2X)) {
+        msaaSetting = Renderer::MsaaSetting::DISABLED;
+        break;
+      }
+      msaaSetting = Renderer::MsaaSetting::MSAA4X;
+      break;
+    case Renderer::MsaaSetting::MSAA4X:
+      if (static_cast<int>(Engine::get()->getRenderer()->maxMsaaSamples) == static_cast<int>(Renderer::MsaaSetting::MSAA4X)) {
+        msaaSetting = Renderer::MsaaSetting::DISABLED;
+        break;
+      }
+      msaaSetting = Renderer::MsaaSetting::MSAA8X;
+      break;
+    case Renderer::MsaaSetting::MSAA8X:
+      if (static_cast<int>(Engine::get()->getRenderer()->maxMsaaSamples) == static_cast<int>(Renderer::MsaaSetting::MSAA8X)) {
+        msaaSetting = Renderer::MsaaSetting::DISABLED;
+        break;
+      }
+      msaaSetting = Renderer::MsaaSetting::MSAA16X;
+      break;
+    case Renderer::MsaaSetting::MSAA16X:
+      if (static_cast<int>(Engine::get()->getRenderer()->maxMsaaSamples) == static_cast<int>(Renderer::MsaaSetting::MSAA16X)) {
+        msaaSetting = Renderer::MsaaSetting::DISABLED;
+        break;
+      }
+      msaaSetting = Renderer::MsaaSetting::MSAA32X;
+      break;
+    case Renderer::MsaaSetting::MSAA32X:
+      if (static_cast<int>(Engine::get()->getRenderer()->maxMsaaSamples) == static_cast<int>(Renderer::MsaaSetting::MSAA32X)) {
+        msaaSetting = Renderer::MsaaSetting::DISABLED;
+        break;
+      }
+      msaaSetting = Renderer::MsaaSetting::MSAA64X;
+      break;
+    case Renderer::MsaaSetting::MSAA64X:
+      msaaSetting = Renderer::MsaaSetting::DISABLED;
+      break;
+  }
+
+  return msaaSetting;
+}
+
+std::ostream& operator<<(std::ostream& os, Renderer::MsaaSetting msaaSetting)
+{
+  switch(msaaSetting) {
+    case Renderer::MsaaSetting::DISABLED: 
+      os << "Disabled"; 
+      return os;
+    case Renderer::MsaaSetting::MSAA2X: 
+      os << "MSAA2X";
+      return os;
+    case Renderer::MsaaSetting::MSAA4X:
+      os << "MSAA4X";
+      return os;
+    case Renderer::MsaaSetting::MSAA8X:
+      os << "MSAA8X";
+      return os;
+    case Renderer::MsaaSetting::MSAA16X:
+      os << "MSAA16X";
+      return os;
+    case Renderer::MsaaSetting::MSAA32X:
+      os << "MSAA32X";
+      return os;
+    case Renderer::MsaaSetting::MSAA64X:
+      os << "MSAA64X";
+      return os;
+    default:
+      os << "???"; 
+      return os;
+  }
+}
+
+/**
+ * @brief Calculates the number of samples that the hardware can handle.
+ * 
+ * @return VkSampleCountFlagBits 
+ */
+VkSampleCountFlagBits Renderer::getMaxUsableSampleCount()
+{
+  VkPhysicalDeviceProperties physicalDeviceProperties;
+  vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
+
+  VkSampleCountFlags counts = physicalDeviceProperties.limits.framebufferColorSampleCounts & 
+                              physicalDeviceProperties.limits.framebufferDepthSampleCounts;
+  if (counts & VK_SAMPLE_COUNT_64_BIT) {
+    std::cout << "INFO: Using VK_SAMPLE_COUNT_64_BIT\n";
+    return VK_SAMPLE_COUNT_64_BIT; 
+  }
+  if (counts & VK_SAMPLE_COUNT_32_BIT) {
+    std::cout << "INFO: Using VK_SAMPLE_COUNT_32_BIT\n";
+    return VK_SAMPLE_COUNT_32_BIT;
+  }
+  if (counts & VK_SAMPLE_COUNT_16_BIT) {
+    std::cout << "INFO: Using VK_SAMPLE_COUNT_16_BIT\n";
+    return VK_SAMPLE_COUNT_16_BIT;
+  }
+  if (counts & VK_SAMPLE_COUNT_8_BIT) {
+    std::cout << "INFO: Using VK_SAMPLE_COUNT_8_BIT\n";
+    return VK_SAMPLE_COUNT_8_BIT;
+  }
+  if (counts & VK_SAMPLE_COUNT_4_BIT) {
+    std::cout << "INFO: Using VK_SAMPLE_COUNT_4_BIT\n";
+    return VK_SAMPLE_COUNT_4_BIT; 
+  }
+  if (counts & VK_SAMPLE_COUNT_2_BIT) {
+    std::cout << "INFO: Using VK_SAMPLE_COUNT_2_BIT\n";
+    return VK_SAMPLE_COUNT_2_BIT;
+  }
+
+  std::cout << "INFO: Using VK_SAMPLE_COUNT_1_BIT\n";
+  return VK_SAMPLE_COUNT_1_BIT;
+}
+
 Renderer::Renderer()
 {
   
@@ -71,18 +195,22 @@ void Renderer::initVulkan()
   this->vulkanDebugger = std::make_unique<VulkanDebugger>(this->vkInstance);
   Engine::get()->getWindow()->createSurface(this->vkInstance, &this->surface);
   pickPhysicalDevice();
+
+  // this->msaaSamples = VK_SAMPLE_COUNT_1_BIT;
+
   createLogicalDevice();
 
   AssetPool::addTexture(device, "img_tex", "assets/textures/viking_room.png");
   AssetPool::addShader(device, "texture", "shaders/texture_fragment_shader.spv", "shaders/texture_vertex_shader.spv");
 
-  this->swapChain = std::make_unique<SwapChain>(physicalDevice, device, surface);
+  this->swapChain = std::make_unique<SwapChain>(physicalDevice, device, surface, msaaSamples);
   this->pipeline = std::make_unique<Pipeline>(device, swapChain->getRenderPass());
-  this->pipeline->createGraphicsPipeline(device, swapChain->getSwapChainImageFormat(), swapChain->getRenderPass());
+  this->pipeline->createGraphicsPipeline(device, swapChain->getSwapChainImageFormat(), swapChain->getRenderPass(), this->msaaSamples);
   createCommandPool();
 
-  this->swapChain->createDepthResources(device, physicalDevice, graphicsQueue, commandPool);
-  this->swapChain->createFramebuffers(device);
+  this->swapChain->createColorResources(device, physicalDevice, msaaSamples);
+  this->swapChain->createDepthResources(device, physicalDevice, graphicsQueue, commandPool, msaaSamples);
+  this->swapChain->createFramebuffers(device, msaaSamples);
 
   std::shared_ptr<Texture> tex = AssetPool::getTexture("img_tex");
   tex->createTextureImage(device, physicalDevice, graphicsQueue, commandPool);
@@ -105,6 +233,9 @@ void Renderer::restart()
   // Destruction
   vkDeviceWaitIdle(device);
 
+  // Convert MsaaSetting enum into the VkSampleCountFlagBits enum.
+  msaaSamples = static_cast<VkSampleCountFlagBits>(static_cast<int>(msaaSetting));
+
   this->swapChain.reset();
 
   std::shared_ptr<Texture> tex1 = AssetPool::getTexture("img_tex");
@@ -113,43 +244,26 @@ void Renderer::restart()
   AssetPool::getShader("texture")->clean(device);
 
   this->pipeline.reset();
-  // this->model.reset();
-
-  // vkDestroyCommandPool(device, commandPool, nullptr);
-
-  // if (VulkanDebugger::ENABLE_VALIDATION_LAYERS) {
-  //   this->vulkanDebugger->destroyDebugUtilsMessengerEXT(this->vkInstance, nullptr);
-  // }
-
-  // vkDestroySurfaceKHR(this->vkInstance, surface, nullptr);
 
   // Recreation
-  // this->vulkanDebugger = std::make_unique<VulkanDebugger>(this->vkInstance);
-  // Engine::get()->getWindow()->createSurface(this->vkInstance, &this->surface);
-  // pickPhysicalDevice();
-  // createLogicalDevice();
-
-  this->swapChain = std::make_unique<SwapChain>(physicalDevice, device, surface);
+  this->swapChain = std::make_unique<SwapChain>(physicalDevice, device, surface, msaaSamples);
   this->pipeline = std::make_unique<Pipeline>(device, swapChain->getRenderPass());
-  this->pipeline->createGraphicsPipeline(device, swapChain->getSwapChainImageFormat(), swapChain->getRenderPass());
-  // createCommandPool();
+  this->pipeline->createGraphicsPipeline(device, swapChain->getSwapChainImageFormat(), swapChain->getRenderPass(), this->msaaSamples);
 
-  this->swapChain->createDepthResources(device, physicalDevice, graphicsQueue, commandPool);
-  this->swapChain->createFramebuffers(device);
+  this->swapChain->createColorResources(device, physicalDevice, msaaSamples);
+  this->swapChain->createDepthResources(device, physicalDevice, graphicsQueue, commandPool, msaaSamples);
+  this->swapChain->createFramebuffers(device, msaaSamples);
 
   std::shared_ptr<Texture> tex = AssetPool::getTexture("img_tex");
   tex->createTextureImage(device, physicalDevice, graphicsQueue, commandPool);
   tex->createTextureImageView(device);
   tex->createTextureSampler(device, physicalDevice);
 
-  // this->loadModels();
-
   std::shared_ptr<Shader> shader = AssetPool::getShader("texture");
   shader->createUniformBuffers();
   this->pipeline->getDescriptorLayout()->createDescriptorPool();
   this->pipeline->getDescriptorLayout()->createDescriptorSets(shader.get(), tex.get());
 
-  // createCommandBuffers();
   this->swapChain->createSyncObjects(device);
 }
 
@@ -320,6 +434,9 @@ void Renderer::pickPhysicalDevice()
     if (isDeviceSuitable(device))
     {
       physicalDevice = device;
+      maxMsaaSamples = getMaxUsableSampleCount();
+      msaaSamples  = maxMsaaSamples;
+      msaaSetting = static_cast<Renderer::MsaaSetting>(static_cast<int>(msaaSamples));
       break;
     }
   }
@@ -351,6 +468,10 @@ void Renderer::createLogicalDevice()
 
   VkPhysicalDeviceFeatures deviceFeatures{};
   deviceFeatures.samplerAnisotropy = VK_TRUE; // Enable Anisotropy device feature.
+  
+  if (sampleShading) {
+    deviceFeatures.sampleRateShading = VK_TRUE; // Enable sample shading feature for the device.
+  }
 
   // Creating Logical Device.
   VkDeviceCreateInfo createInfo{};
@@ -396,7 +517,8 @@ void Renderer::recreateSwapChain()
   }
   vkDeviceWaitIdle(device);
 
-  this->swapChain->recreateSwapChain(device, physicalDevice, graphicsQueue, commandPool, surface);
+  this->swapChain->recreateSwapChain(device, physicalDevice, graphicsQueue, 
+                                     commandPool, surface, msaaSamples);
 }
 
 void Renderer::createCommandPool()
@@ -713,4 +835,14 @@ const std::unique_ptr<SwapChain> &Renderer::getSwapChain() const
 const std::unique_ptr<Pipeline> &Renderer::getPipeline() const
 {
   return this->pipeline;
+}
+
+VkSampleCountFlagBits Renderer::getMsaaSample()
+{
+  return this->msaaSamples;
+}
+
+VkSampleCountFlagBits Renderer::getMaxMsaaSamples()
+{
+  return this->maxMsaaSamples;
 }

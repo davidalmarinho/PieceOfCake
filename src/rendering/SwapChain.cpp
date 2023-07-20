@@ -6,11 +6,11 @@
 #include "Engine.hpp"
 #include "Utils.hpp"
 
-SwapChain::SwapChain(VkPhysicalDevice physicalDevice, VkDevice device, VkSurfaceKHR surface) : cachedDevice(device)
+SwapChain::SwapChain(VkPhysicalDevice physicalDevice, VkDevice device, VkSurfaceKHR surface, VkSampleCountFlagBits numMsaaSamples) : cachedDevice(device), cachedMsaaSample(numMsaaSamples)
 {
   this->createSwapChain(physicalDevice, device, surface);
   this->createImageViews(device);
-  this->createRenderPass(device, physicalDevice);
+  this->createRenderPass(device, physicalDevice, numMsaaSamples);
 }
 
 void SwapChain::createSwapChain(VkPhysicalDevice physicalDevice, VkDevice device, VkSurfaceKHR surface)
@@ -96,25 +96,32 @@ void SwapChain::createSwapChain(VkPhysicalDevice physicalDevice, VkDevice device
 
 SwapChain::~SwapChain()
 {
-  this->clean();
+  this->clean(cachedDevice, cachedMsaaSample);
 }
 
-void SwapChain::clean()
+void SwapChain::clean(VkDevice device, VkSampleCountFlagBits msaaSample)
 {
-  this->restartSwapChain(cachedDevice);
+  this->restartSwapChain(device, msaaSample);
 
   for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-    vkDestroySemaphore(cachedDevice, renderFinishedSemaphores[i], nullptr);
-    vkDestroySemaphore(cachedDevice, imageAvailableSemaphores[i], nullptr);
-    vkDestroyFence(cachedDevice, inFlightFences[i], nullptr);
+    vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
+    vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
+    vkDestroyFence(device, inFlightFences[i], nullptr);
   }
 }
 
-void SwapChain::restartSwapChain(VkDevice device)
+void SwapChain::restartSwapChain(VkDevice device, VkSampleCountFlagBits msaaSample)
 {
-  vkDestroyImageView(cachedDevice, depthImageView, nullptr);
-  vkDestroyImage(cachedDevice, depthImage, nullptr);
-  vkFreeMemory(cachedDevice, depthImageMemory, nullptr);
+  // Destroys color images if it has been created due to MSAA activation.
+  if (msaaSample != VK_SAMPLE_COUNT_1_BIT) {
+    vkDestroyImageView(device, colorImageView, nullptr);
+    vkDestroyImage(device, colorImage, nullptr);
+    vkFreeMemory(device, colorImageMemory, nullptr);
+  }
+
+  vkDestroyImageView(device, depthImageView, nullptr);
+  vkDestroyImage(device, depthImage, nullptr);
+  vkFreeMemory(device, depthImageMemory, nullptr);
 
   for (size_t i = 0; i < swapChainFramebuffers.size(); i++) {
     vkDestroyFramebuffer(device, swapChainFramebuffers[i], nullptr);
@@ -128,14 +135,16 @@ void SwapChain::restartSwapChain(VkDevice device)
 }
 
 void SwapChain::recreateSwapChain(VkDevice device, VkPhysicalDevice physicalDevice, 
-                                  VkQueue graphicsQueue, VkCommandPool commandPool, VkSurfaceKHR surface)
+                                  VkQueue graphicsQueue, VkCommandPool commandPool, VkSurfaceKHR surface,
+                                  VkSampleCountFlagBits msaaSamples)
 {
-  this->restartSwapChain(device);
+  this->restartSwapChain(device, msaaSamples);
 
   this->createSwapChain(physicalDevice, device, surface);
   this->createImageViews(device);
-  this->createDepthResources(device, physicalDevice, graphicsQueue, commandPool);
-  this->createFramebuffers(device);
+  this->createColorResources(device, physicalDevice, msaaSamples);
+  this->createDepthResources(device, physicalDevice, graphicsQueue, commandPool, msaaSamples);
+  this->createFramebuffers(device, msaaSamples);
 }
 
 VkExtent2D SwapChain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities)
@@ -170,11 +179,11 @@ void SwapChain::createImageViews(VkDevice device)
   }
 }
 
-void SwapChain::createRenderPass(VkDevice device, VkPhysicalDevice physicalDevice)
+void SwapChain::createRenderPass(VkDevice device, VkPhysicalDevice physicalDevice, VkSampleCountFlagBits msaaSamples)
 {
   VkAttachmentDescription colorAttachment{};
   colorAttachment.format  = swapChainImageFormat;
-  colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+  colorAttachment.samples = msaaSamples;
 
   colorAttachment.loadOp  = VK_ATTACHMENT_LOAD_OP_CLEAR;
   colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -182,18 +191,35 @@ void SwapChain::createRenderPass(VkDevice device, VkPhysicalDevice physicalDevic
   colorAttachment.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
   colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 
-  colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;     // Specifies which layout the image will have before the render pass begins.
-  colorAttachment.finalLayout   = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR; // Specifies the layout to automatically transition to when the render pass finishes.
+  colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; // Specifies which layout the image will have before the render pass begins.
+
+  // Specify the layout to automatically transition to when the render pass finishes.
+  if (msaaSamples ==  VK_SAMPLE_COUNT_1_BIT)
+    colorAttachment.finalLayout   = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+  else
+    colorAttachment.finalLayout   = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+  colorAttachment.finalLayout   = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
   VkAttachmentDescription depthAttachment{};
   depthAttachment.format         = findDepthFormat(physicalDevice);
-  depthAttachment.samples        = VK_SAMPLE_COUNT_1_BIT;
+  depthAttachment.samples        = msaaSamples;
   depthAttachment.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
   depthAttachment.storeOp        = VK_ATTACHMENT_STORE_OP_DONT_CARE;
   depthAttachment.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
   depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
   depthAttachment.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
   depthAttachment.finalLayout    = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+  VkAttachmentDescription colorAttachmentResolve{};
+  colorAttachmentResolve.format = swapChainImageFormat;
+  colorAttachmentResolve.samples = VK_SAMPLE_COUNT_1_BIT;
+  colorAttachmentResolve.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+  colorAttachmentResolve.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+  colorAttachmentResolve.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+  colorAttachmentResolve.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+  colorAttachmentResolve.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+  colorAttachmentResolve.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
   VkAttachmentReference colorAttachmentRef{};
   colorAttachmentRef.attachment = 0; // Specifies which attachment to reference by its index in the attachment descriptions array.
@@ -203,12 +229,18 @@ void SwapChain::createRenderPass(VkDevice device, VkPhysicalDevice physicalDevic
   depthAttachmentRef.attachment = 1;
   depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
+  VkAttachmentReference colorAttachmentResolveRef{};
+  colorAttachmentResolveRef.attachment = 2;
+  colorAttachmentResolveRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
   VkSubpassDescription subpass{};
   subpass.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
   subpass.colorAttachmentCount    = 1; // The index of the attachment in this array is directly referenced from the fragment shader with the layout(location = 0) out vec4 outColor directive.
   subpass.pColorAttachments       = &colorAttachmentRef;
   subpass.pDepthStencilAttachment = &depthAttachmentRef;
+  if (msaaSamples != VK_SAMPLE_COUNT_1_BIT) {
+    subpass.pResolveAttachments = &colorAttachmentResolveRef;
+  } 
 
   VkSubpassDependency dependency{};
   dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
@@ -220,7 +252,12 @@ void SwapChain::createRenderPass(VkDevice device, VkPhysicalDevice physicalDevic
   dependency.dstStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
   dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
-  std::array<VkAttachmentDescription, 2> attachments = {colorAttachment, depthAttachment};
+  std::vector<VkAttachmentDescription> attachments;
+  if (msaaSamples == VK_SAMPLE_COUNT_1_BIT)
+    attachments = {colorAttachment, depthAttachment};
+  else
+    attachments = {colorAttachment, depthAttachment, colorAttachmentResolve};
+
   VkRenderPassCreateInfo renderPassInfo{};
   renderPassInfo.sType           = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
   renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
@@ -235,16 +272,18 @@ void SwapChain::createRenderPass(VkDevice device, VkPhysicalDevice physicalDevic
   }
 }
 
-void SwapChain::createFramebuffers(VkDevice device)
+void SwapChain::createFramebuffers(VkDevice device, VkSampleCountFlagBits msaaSample)
 {
   // Resize the container to hold all of the framebuffers
   swapChainFramebuffers.resize(swapChainImageViews.size());
 
   for (size_t i = 0; i < swapChainImageViews.size(); i++) {
-    std::array<VkImageView, 2> attachments = {
-      swapChainImageViews[i],
-      depthImageView
-    };
+    std::vector<VkImageView> attachments;
+
+    if (msaaSample == VK_SAMPLE_COUNT_1_BIT)
+      attachments = {swapChainImageViews[i], depthImageView};
+    else
+      attachments = {colorImageView, depthImageView, swapChainImageViews[i]};
 
     VkFramebufferCreateInfo framebufferInfo{};
     framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -342,14 +381,29 @@ VkPresentModeKHR SwapChain::chooseSwapPresentMode(const std::vector<VkPresentMod
   }
 }
 
+// MSAA configuration.
+void SwapChain::createColorResources(VkDevice device, VkPhysicalDevice physicalDevice, 
+                                     VkSampleCountFlagBits msaaSamples)
+{
+  if (Engine::get()->getRenderer()->msaaSetting != Renderer::MsaaSetting::DISABLED) {
+    VkFormat colorFormat = swapChainImageFormat;
+
+    Utils::createImage(device, physicalDevice, swapChainExtent.width, swapChainExtent.height, 
+                      1, msaaSamples, colorFormat, VK_IMAGE_TILING_OPTIMAL, 
+                      VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, 
+                      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, colorImage, colorImageMemory);
+    colorImageView = Utils::createImageView(device, colorImage, colorFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+  }
+}
+
 // Depth configuration.
 
 void SwapChain::createDepthResources(VkDevice device, VkPhysicalDevice physicalDevice, 
-                                     VkQueue graphicsQueue, VkCommandPool commandPool)
+                                     VkQueue graphicsQueue, VkCommandPool commandPool, VkSampleCountFlagBits numMsaaSamples)
 {
   VkFormat depthFormat = findDepthFormat(physicalDevice);
   
-  Utils::createImage(device, physicalDevice, swapChainExtent.width, swapChainExtent.height, 1, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
+  Utils::createImage(device, physicalDevice, swapChainExtent.width, swapChainExtent.height, 1, numMsaaSamples, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
   this->depthImageView = Utils::createImageView(device, depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
 
   Utils::transitionImageLayout(device, graphicsQueue, commandPool, 
@@ -358,7 +412,8 @@ void SwapChain::createDepthResources(VkDevice device, VkPhysicalDevice physicalD
 }
 
 // Takes a list of candidate formats in order from most desirable to least desirable, and checks which is the first one that is supported.
-VkFormat SwapChain::findSupportedFormat(VkPhysicalDevice physicalDevice, const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
+VkFormat SwapChain::findSupportedFormat(VkPhysicalDevice physicalDevice, const std::vector<VkFormat>& candidates, 
+                                        VkImageTiling tiling, VkFormatFeatureFlags features)
 {
   // The support of a format depends on the tiling mode and usage, so we must also include these as parameters.
   for (VkFormat format : candidates) {

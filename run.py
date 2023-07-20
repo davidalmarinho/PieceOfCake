@@ -13,6 +13,7 @@ HELP = '''
     --build
     --run
     --help
+    --run-test
 
     config --prj_name 'ProjectNameExample'
     config --release ON
@@ -210,7 +211,7 @@ def build_program():
     
 
 
-def run_program():
+def run_program(test_run):
     os.chdir(OUTPUT_DIR + '/bin')
    # TODO: This error checking isn't working 
    #  if not exists_file(OUTPUT_DIR + '/bin/' + PRJ_NAME):
@@ -228,7 +229,10 @@ def run_program():
         #        os.chdir('Release')
         #    os.system(PRJ_NAME)
         else:
-            os.system('./' + PRJ_NAME)
+            if test_run:
+                os.system('timeout 3 ./' + PRJ_NAME + ' -l')
+            else:
+                os.system('./' + PRJ_NAME)
     else:
         # Valgrind options:
         # --leak-check=full \
@@ -285,9 +289,12 @@ def handle_user_option(args):
         arg = sys.argv[1]
         if arg.__eq__('--run'):
             if build_program():
-                run_program()
+                run_program(False)
         elif arg.__eq__('--build'):
             build_program()
+        elif arg.__eq__('--run-test'):
+            if build_program():
+                run_program(True)
         else:
             print(HELP)
 

@@ -159,7 +159,7 @@ VkImageView Utils::createImageView(VkDevice device, VkImage image, VkFormat form
 }
 
 void Utils::createImage(VkDevice device, VkPhysicalDevice physicalDevice,
-                 uint32_t width, uint32_t height, uint32_t mipLevels, VkFormat format, 
+                 uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits msaaSamples, VkFormat format, 
                  VkImageTiling tiling, VkImageUsageFlags usage, 
                  VkMemoryPropertyFlags properties, VkImage& image, 
                  VkDeviceMemory& imageMemory)
@@ -191,7 +191,7 @@ void Utils::createImage(VkDevice device, VkPhysicalDevice physicalDevice,
   // Image will only be used by one queue family: the one that supports graphics (and therefore also) transfer operations.
   imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-  imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+  imageInfo.samples = msaaSamples;
   imageInfo.flags   = 0; // NOTE: To make a Voxel Engine you should explore the available flags for this option.
   
   if (vkCreateImage(device, &imageInfo, nullptr, &image) != VK_SUCCESS) {

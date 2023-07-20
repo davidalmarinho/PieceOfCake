@@ -28,7 +28,7 @@ private:
   VkRenderPass cachedRenderPass;
 
   // Multisample configuration
-  VkPipelineMultisampleStateCreateInfo setupMultisample();
+  VkPipelineMultisampleStateCreateInfo setupMultisample(VkSampleCountFlagBits msaaSamples);
   // Stages:
   VkPipelineRasterizationStateCreateInfo setupRasterizationStage();
 
@@ -36,7 +36,8 @@ public:
   Pipeline(VkDevice device, VkRenderPass renderPass);
   ~Pipeline();
 
-  void createGraphicsPipeline(VkDevice device, VkFormat swapChainImageFormat, VkRenderPass renderPass);
+  void createGraphicsPipeline(VkDevice device, VkFormat swapChainImageFormat, 
+                              VkRenderPass renderPass, VkSampleCountFlagBits msaaSamples);
   void bind(VkCommandBuffer commandBuffer);
 
   // Getters and Setters

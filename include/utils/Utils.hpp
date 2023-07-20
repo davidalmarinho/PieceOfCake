@@ -21,7 +21,7 @@ namespace Utils
   VkImageView createImageView(VkDevice device, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels);
 
   void createImage(VkDevice device, VkPhysicalDevice physicalDevice,
-                   uint32_t texWidth, uint32_t texHeight, uint32_t mipLevels, 
+                   uint32_t texWidth, uint32_t texHeight, uint32_t mipLevels, VkSampleCountFlagBits msaaSamples,
                    VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, 
                    VkMemoryPropertyFlags properties, VkImage& image, 
                    VkDeviceMemory& imageMemory);

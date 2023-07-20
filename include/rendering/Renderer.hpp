@@ -50,14 +50,32 @@ public:
   friend MipmapSetting operator++(MipmapSetting& mipmapSetting, int);
   friend std::ostream& operator<<(std::ostream& os, MipmapSetting mipmapSetting);
 
+  enum class MsaaSetting
+  {
+    MSAA64X = 64,
+    MSAA32X = 32,
+    MSAA16X = 16,
+    MSAA8X = 8,
+    MSAA4X = 4,
+    MSAA2X = 2,
+    DISABLED = 1,
+  };
+
+  friend MsaaSetting operator++(MsaaSetting& msaaSetting, int);
+  friend std::ostream& operator<<(std::ostream& os, MsaaSetting mssaSetting);
+
+  // Graphics settings configuration.
+  MipmapSetting mipmapSetting;
+  // Multisampling cnfiguration --MSAA
+  MsaaSetting msaaSetting;
+
+  bool sampleShading = true;
+
   Renderer();
   ~Renderer();
 
   void clean();
   void restart();
-
-  // Graphics settings configuration.
-  MipmapSetting mipmapSetting;
 
   void init();
   void drawFrame();
@@ -71,8 +89,10 @@ public:
   const std::unique_ptr<SwapChain> &getSwapChain() const;
   const std::unique_ptr<Pipeline> &getPipeline() const;
 
+  VkSampleCountFlagBits getMsaaSample();
+  VkSampleCountFlagBits getMaxMsaaSamples();
+
 private:
-  void initVulkan();
   VkSurfaceKHR surface;
   std::unique_ptr<Model> model;
   std::unique_ptr<VulkanDebugger> vulkanDebugger;
@@ -87,9 +107,16 @@ private:
   VkQueue graphicsQueue;
   VkQueue presentQueue;
 
+  void initVulkan();
+
   // Command Pool
   VkCommandPool commandPool;
   std::vector<VkCommandBuffer> commandBuffers; // Allocates command buffers.
+
+  // Multisampling configuration --MSAA
+  VkSampleCountFlagBits msaaSamples    = VK_SAMPLE_COUNT_1_BIT;
+  VkSampleCountFlagBits maxMsaaSamples = VK_SAMPLE_COUNT_1_BIT; // Keeps track of how many samples the hardware can use.
+  VkSampleCountFlagBits getMaxUsableSampleCount();
 
   void createInstance();
   void pickPhysicalDevice();

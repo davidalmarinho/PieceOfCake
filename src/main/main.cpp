@@ -12,6 +12,7 @@ int main()
 
   // TODO: Configuration file that can save settings like this.
   renderer->mipmapSetting = Renderer::MipmapSetting::DISABLED;
+  renderer->msaaSetting   = Renderer::MsaaSetting::MSAA8X;
 
   eng->attachRenderer(std::move(renderer));
 

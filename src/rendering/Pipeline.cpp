@@ -1,6 +1,7 @@
 #include "Pipeline.hpp"
 #include "AssetPool.hpp"
 #include "Model.hpp"
+#include "Engine.hpp"
 
 #include <array>
 #include <glm/glm.hpp>
@@ -60,7 +61,8 @@ void Pipeline::bind(VkCommandBuffer commandBuffer)
   vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->graphicsPipeline);
 }
 
-void Pipeline::createGraphicsPipeline(VkDevice device, VkFormat swapChainImageFormat, VkRenderPass renderPass)
+void Pipeline::createGraphicsPipeline(VkDevice device, VkFormat swapChainImageFormat, 
+                                      VkRenderPass renderPass, VkSampleCountFlagBits msaaSamples)
 {
   std::shared_ptr shader = AssetPool::getShader("texture");
 
@@ -117,7 +119,7 @@ void Pipeline::createGraphicsPipeline(VkDevice device, VkFormat swapChainImageFo
   VkPipelineRasterizationStateCreateInfo rasterizer = this->setupRasterizationStage();
   
   // Multisampling --is one of the ways to perform anti-aliasing.
-  VkPipelineMultisampleStateCreateInfo multisampling = this->setupMultisample();
+  VkPipelineMultisampleStateCreateInfo multisampling = this->setupMultisample(msaaSamples);
 
   VkPipelineDepthStencilStateCreateInfo depthStencil{};
   depthStencil.sType                 = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
@@ -185,16 +187,23 @@ void Pipeline::createGraphicsPipeline(VkDevice device, VkFormat swapChainImageFo
   vkDestroyShaderModule(device, vertShaderModule, nullptr);
 }
 
-VkPipelineMultisampleStateCreateInfo Pipeline::setupMultisample()
+VkPipelineMultisampleStateCreateInfo Pipeline::setupMultisample(VkSampleCountFlagBits msaaSamples)
 {
   VkPipelineMultisampleStateCreateInfo multisampling = {};
   multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-  multisampling.sampleShadingEnable   = VK_FALSE;
-  multisampling.rasterizationSamples  = VK_SAMPLE_COUNT_1_BIT;
-  multisampling.minSampleShading      = 1.0f;
+  multisampling.rasterizationSamples  = msaaSamples;
   multisampling.pSampleMask           = nullptr;
   multisampling.alphaToCoverageEnable = VK_FALSE;
   multisampling.alphaToOneEnable      = VK_FALSE;
+
+  if (Engine::get()->getRenderer()->sampleShading) {
+    multisampling.sampleShadingEnable = VK_TRUE; // enable sample shading in the pipeline
+    multisampling.minSampleShading    = .2f; // min fraction for sample shading; closer to one is smoother
+  }
+  else {
+    multisampling.sampleShadingEnable = VK_FALSE;
+    multisampling.minSampleShading    = 1.0f;
+  }
 
   return multisampling;
 }
