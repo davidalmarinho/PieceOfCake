@@ -13,7 +13,6 @@ DescriptorLayout::DescriptorLayout(VkDevice device) : cachedDevice(device)
 
 DescriptorLayout::~DescriptorLayout()
 {
-  AssetPool::cleanup();
   vkDestroyDescriptorPool(cachedDevice, descriptorPool, nullptr);
 
   vkDestroyDescriptorSetLayout(cachedDevice, descriptorSetLayout, nullptr);

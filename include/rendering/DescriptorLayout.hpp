@@ -22,12 +22,13 @@ public:
   const VkDescriptorSetLayout *getDescriptorSetLayoutPointer();
 
 private:
-  VkDescriptorSetLayout descriptorSetLayout;
   std::vector<VkDescriptorSet> descriptorSets;
 
   VkDescriptorPool descriptorPool;
+  VkDescriptorSetLayout descriptorSetLayout;
 
   void createDescriptorSetLayout(VkDevice device);
+
 
   // Cache
   VkDevice cachedDevice;

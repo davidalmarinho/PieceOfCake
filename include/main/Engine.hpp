@@ -17,6 +17,7 @@ private:
   std::unique_ptr<Renderer> renderer;
   void processMemUsage(double& vm_usage, double& resident_set);
   void printOS();
+  void printDevKeyBinds();
   void mainLoop();
 
   // TODO: Put this in an Utils file.

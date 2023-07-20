@@ -17,7 +17,7 @@ struct SwapChainSupportDetails
 
 class SwapChain
 {
-  private:
+private:
   VkRenderPass renderPass;
   VkFormat swapChainImageFormat;
   VkSwapchainKHR swapChain;
@@ -40,6 +40,8 @@ class SwapChain
   std::vector<VkSemaphore> renderFinishedSemaphores;
   std::vector<VkFence> inFlightFences;
   std::vector<VkFence> imagesInFlight;
+
+  void clean();
 
   VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats);
   VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes);

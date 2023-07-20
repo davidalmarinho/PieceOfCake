@@ -6,6 +6,38 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
 
+Renderer::MipmapSetting operator++(Renderer::MipmapSetting& mipmapSetting, int)
+{
+  switch(mipmapSetting) {
+    case Renderer::MipmapSetting::DISABLED:
+      mipmapSetting = Renderer::MipmapSetting::LINEAR;
+      break;
+    case Renderer::MipmapSetting::LINEAR:
+      mipmapSetting = Renderer::MipmapSetting::DISABLED;
+      break;
+  }
+
+  return mipmapSetting;
+}
+
+std::ostream& operator<<(std::ostream& os, Renderer::MipmapSetting mipmapSetting)
+{
+  switch(mipmapSetting) {
+    case Renderer::MipmapSetting::DISABLED: 
+      os << "Disabled"; 
+      return os;
+    case Renderer::MipmapSetting::LINEAR: 
+      os << "Linear"; 
+      return os;
+    case Renderer::MipmapSetting::NEAREST: 
+      os << "Nearest"; 
+      return os;
+    default:
+      os << "???"; 
+      return os;
+  }
+}
+
 Renderer::Renderer()
 {
   
@@ -32,10 +64,104 @@ void Renderer::init()
   initVulkan();
 }
 
+void Renderer::initVulkan()
+{
+  // TODO: There are 3 types of mipmapping: Nearest, Linear and disabled. Nearest has to be implemented.
+  createInstance();
+  this->vulkanDebugger = std::make_unique<VulkanDebugger>(this->vkInstance);
+  Engine::get()->getWindow()->createSurface(this->vkInstance, &this->surface);
+  pickPhysicalDevice();
+  createLogicalDevice();
+
+  AssetPool::addTexture(device, "img_tex", "assets/textures/viking_room.png");
+  AssetPool::addShader(device, "texture", "shaders/texture_fragment_shader.spv", "shaders/texture_vertex_shader.spv");
+
+  this->swapChain = std::make_unique<SwapChain>(physicalDevice, device, surface);
+  this->pipeline = std::make_unique<Pipeline>(device, swapChain->getRenderPass());
+  this->pipeline->createGraphicsPipeline(device, swapChain->getSwapChainImageFormat(), swapChain->getRenderPass());
+  createCommandPool();
+
+  this->swapChain->createDepthResources(device, physicalDevice, graphicsQueue, commandPool);
+  this->swapChain->createFramebuffers(device);
+
+  std::shared_ptr<Texture> tex = AssetPool::getTexture("img_tex");
+  tex->createTextureImage(device, physicalDevice, graphicsQueue, commandPool);
+  tex->createTextureImageView(device);
+  tex->createTextureSampler(device, physicalDevice);
+
+  this->loadModels();
+
+  std::shared_ptr<Shader> shader = AssetPool::getShader("texture");
+  shader->createUniformBuffers();
+  this->pipeline->getDescriptorLayout()->createDescriptorPool();
+  this->pipeline->getDescriptorLayout()->createDescriptorSets(shader.get(), tex.get());
+
+  createCommandBuffers();
+  this->swapChain->createSyncObjects(device);
+}
+
+void Renderer::restart()
+{
+  // Destruction
+  vkDeviceWaitIdle(device);
+
+  this->swapChain.reset();
+
+  std::shared_ptr<Texture> tex1 = AssetPool::getTexture("img_tex");
+  tex1->clean(device);
+
+  AssetPool::getShader("texture")->clean(device);
+
+  this->pipeline.reset();
+  // this->model.reset();
+
+  // vkDestroyCommandPool(device, commandPool, nullptr);
+
+  // if (VulkanDebugger::ENABLE_VALIDATION_LAYERS) {
+  //   this->vulkanDebugger->destroyDebugUtilsMessengerEXT(this->vkInstance, nullptr);
+  // }
+
+  // vkDestroySurfaceKHR(this->vkInstance, surface, nullptr);
+
+  // Recreation
+  // this->vulkanDebugger = std::make_unique<VulkanDebugger>(this->vkInstance);
+  // Engine::get()->getWindow()->createSurface(this->vkInstance, &this->surface);
+  // pickPhysicalDevice();
+  // createLogicalDevice();
+
+  this->swapChain = std::make_unique<SwapChain>(physicalDevice, device, surface);
+  this->pipeline = std::make_unique<Pipeline>(device, swapChain->getRenderPass());
+  this->pipeline->createGraphicsPipeline(device, swapChain->getSwapChainImageFormat(), swapChain->getRenderPass());
+  // createCommandPool();
+
+  this->swapChain->createDepthResources(device, physicalDevice, graphicsQueue, commandPool);
+  this->swapChain->createFramebuffers(device);
+
+  std::shared_ptr<Texture> tex = AssetPool::getTexture("img_tex");
+  tex->createTextureImage(device, physicalDevice, graphicsQueue, commandPool);
+  tex->createTextureImageView(device);
+  tex->createTextureSampler(device, physicalDevice);
+
+  // this->loadModels();
+
+  std::shared_ptr<Shader> shader = AssetPool::getShader("texture");
+  shader->createUniformBuffers();
+  this->pipeline->getDescriptorLayout()->createDescriptorPool();
+  this->pipeline->getDescriptorLayout()->createDescriptorSets(shader.get(), tex.get());
+
+  // createCommandBuffers();
+  this->swapChain->createSyncObjects(device);
+}
+
 Renderer::~Renderer()
 {
+  this->clean();
+}
+
+void Renderer::clean()
+{
   this->swapChain.reset();
-  AssetPool::cleanTextures();
+  AssetPool::cleanup();
   this->pipeline.reset();
   this->model.reset();
 
@@ -132,45 +258,6 @@ void Renderer::loadModels()
   this->model = std::make_unique<Model>(vertices, indices);
 }
 
-void Renderer::initVulkan()
-{
-  // TODO: Possible toggle mipmapping during running.
-  // TODO: There are 3 types of mipmapping: Nearest, Linear and disabled!!!
-  this->isMipmapping = false;
-
-  createInstance();
-  this->vulkanDebugger = std::make_unique<VulkanDebugger>(this->vkInstance);
-  Engine::get()->getWindow()->createSurface(this->vkInstance, &this->surface);
-  pickPhysicalDevice();
-  createLogicalDevice();
-
-  AssetPool::addTexture(device, "img_tex", "assets/textures/viking_room.png");
-  AssetPool::addShader(device, "texture", "shaders/texture_fragment_shader.spv", "shaders/texture_vertex_shader.spv");
-
-  this->swapChain = std::make_unique<SwapChain>(physicalDevice, device, surface);
-  this->pipeline = std::make_unique<Pipeline>(device, swapChain->getRenderPass());
-  this->pipeline->createGraphicsPipeline(device, swapChain->getSwapChainImageFormat(), swapChain->getRenderPass());
-  createCommandPool();
-
-  this->swapChain->createDepthResources(device, physicalDevice, graphicsQueue, commandPool);
-  this->swapChain->createFramebuffers(device);
-
-  std::shared_ptr<Texture> tex = AssetPool::getTexture("img_tex");
-  tex->createTextureImage(device, physicalDevice, graphicsQueue, commandPool);
-  tex->createTextureImageView(device);
-  tex->createTextureSampler(device, physicalDevice);
-
-  this->loadModels();
-
-  std::shared_ptr<Shader> shader = AssetPool::getShader("texture");
-  shader->createUniformBuffers();
-  this->pipeline->getDescriptorLayout()->createDescriptorPool();
-  this->pipeline->getDescriptorLayout()->createDescriptorSets(shader.get(), tex.get());
-
-  createCommandBuffers();
-  this->swapChain->createSyncObjects(device);
-}
-
 void Renderer::createInstance()
 {
   if (VulkanDebugger::ENABLE_VALIDATION_LAYERS && !checkValidationLayerSupport()) {
@@ -251,7 +338,7 @@ void Renderer::createLogicalDevice()
   std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
   // Creating queues
-  // TODO: In future is a good idea to make this multithread
+  // TODO: In future is a good idea to make this multithread.
   float queuePriority = 1.0f;
   for (uint32_t queueFamily : uniqueQueueFamilies) {
     VkDeviceQueueCreateInfo queueCreateInfo{};

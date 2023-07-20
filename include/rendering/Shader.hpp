@@ -31,6 +31,8 @@ public:
   void createUniformBuffers();
   void updateUniformBuffer(uint32_t currentFrame);
 
+  void clean(VkDevice device);
+
   // Getters and Setters
   const std::vector<char> getFragmentShaderCode();
   const std::vector<char> getVertexShaderCode();

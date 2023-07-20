@@ -9,6 +9,10 @@ int main()
   eng->attachWindow(std::move(window));
 
   std::unique_ptr<Renderer> renderer = std::make_unique<Renderer>();
+
+  // TODO: Configuration file that can save settings like this.
+  renderer->mipmapSetting = Renderer::MipmapSetting::DISABLED;
+
   eng->attachRenderer(std::move(renderer));
 
   // Init

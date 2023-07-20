@@ -40,11 +40,24 @@ const std::vector<const char *> deviceExtensions = {
 class Renderer
 {
 public:
+  enum class MipmapSetting
+  {
+    DISABLED = 0,
+    LINEAR   = 1,
+    NEAREST  = 2 // TODO: Implement this.
+  };
+
+  friend MipmapSetting operator++(MipmapSetting& mipmapSetting, int);
+  friend std::ostream& operator<<(std::ostream& os, MipmapSetting mipmapSetting);
+
   Renderer();
   ~Renderer();
 
+  void clean();
+  void restart();
+
   // Graphics settings configuration.
-  bool isMipmapping;
+  MipmapSetting mipmapSetting;
 
   void init();
   void drawFrame();
@@ -60,6 +73,24 @@ public:
 
 private:
   void initVulkan();
+  VkSurfaceKHR surface;
+  std::unique_ptr<Model> model;
+  std::unique_ptr<VulkanDebugger> vulkanDebugger;
+  std::unique_ptr<SwapChain> swapChain;
+  std::unique_ptr<Pipeline> pipeline;
+
+  VkDevice device;
+  VkInstance vkInstance;
+
+  VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+
+  VkQueue graphicsQueue;
+  VkQueue presentQueue;
+
+  // Command Pool
+  VkCommandPool commandPool;
+  std::vector<VkCommandBuffer> commandBuffers; // Allocates command buffers.
+
   void createInstance();
   void pickPhysicalDevice();
   void createLogicalDevice();
@@ -72,22 +103,4 @@ private:
   std::vector<const char *> getRequiredExtensions();
   bool checkValidationLayerSupport();
   void loadModels();
-
-  std::unique_ptr<Model> model;
-  std::unique_ptr<VulkanDebugger> vulkanDebugger;
-  std::unique_ptr<SwapChain> swapChain;
-  std::unique_ptr<Pipeline> pipeline;
-
-  VkDevice device;
-  VkInstance vkInstance;
-  VkSurfaceKHR surface;
-
-  VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-
-  VkQueue graphicsQueue;
-  VkQueue presentQueue;
-
-  // Command Pool
-  VkCommandPool commandPool;
-  std::vector<VkCommandBuffer> commandBuffers; // Allocates command buffers.
 };

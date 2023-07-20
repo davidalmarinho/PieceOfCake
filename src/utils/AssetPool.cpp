@@ -137,5 +137,6 @@ void AssetPool::cleanTextures()
 
 void AssetPool::cleanup()
 {
+	AssetPool::cleanTextures();
 	AssetPool::cleanShaders();
 }

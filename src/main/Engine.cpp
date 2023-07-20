@@ -24,6 +24,7 @@ void Engine::init()
 {
   this->printOS();
   this->renderer->init();
+  this->printDevKeyBinds();
 }
 
 void Engine::processMemUsage(double& vm_usage, double& resident_set)
@@ -60,6 +61,15 @@ void Engine::printOS()
 #endif
 }
 
+void Engine::printDevKeyBinds()
+{
+
+  std::cout << "╭──────────────────────────────────────────────────────────────────────────╮\n";
+  std::cout << "  Useful developer keybindings:\n";
+  std::cout << "    SHIFT + F1 -> Toggles Mipmap setting (DISABLED, LINEAR, NEAREST).";
+  std::cout << "\n╰──────────────────────────────────────────────────────────────────────────╯\n";
+}
+
 void Engine::mainLoop()
 {
   float lastTime = glfwGetTime();
@@ -85,6 +95,13 @@ void Engine::mainLoop()
     if (accumulator > MAX_FPS_PER_SEC) {
       KeyListener::update();
       glfwPollEvents();
+
+      // Toggle mipmap setting
+      if (KeyListener::isBindDown(GLFW_KEY_LEFT_SHIFT, GLFW_KEY_F1)) {
+        this->renderer->mipmapSetting++;
+        std::cout << "Mipmap setting changed to '" << this->renderer->mipmapSetting << "'\n";
+        this->renderer->restart();
+      }
 
       // Call engine logic
       accumulator = 0.0f;

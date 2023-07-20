@@ -12,9 +12,14 @@ Shader::Shader(VkDevice device, const std::string fragmentShaderFilepath, const 
 
 Shader::~Shader()
 {
+  this->clean(cachedDevice);
+}
+
+void Shader::clean(VkDevice device)
+{
   for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-    vkDestroyBuffer(cachedDevice, uniformBuffers[i], nullptr);
-    vkFreeMemory(cachedDevice, uniformBuffersMemory[i], nullptr);
+    vkDestroyBuffer(device, uniformBuffers[i], nullptr);
+    vkFreeMemory(device, uniformBuffersMemory[i], nullptr);
   }
 }
 

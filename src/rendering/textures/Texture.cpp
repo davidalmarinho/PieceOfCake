@@ -13,16 +13,16 @@ Texture::Texture(VkDevice device, const std::string filepath) : cachedDevice(dev
 
 Texture::~Texture()
 {
-  this->cleanTexture();
+  this->clean(cachedDevice);
 }
 
-void Texture::cleanTexture()
+void Texture::clean(VkDevice device)
 {
-  vkDestroySampler(cachedDevice, textureSampler, nullptr);
-  vkDestroyImageView(cachedDevice, textureImageView, nullptr);
+  vkDestroySampler(device, textureSampler, nullptr);
+  vkDestroyImageView(device, textureImageView, nullptr);
 
-  vkDestroyImage(cachedDevice, textureImage, nullptr);
-  vkFreeMemory(cachedDevice, textureImageMemory, nullptr);
+  vkDestroyImage(device, textureImage, nullptr);
+  vkFreeMemory(device, textureImageMemory, nullptr);
 }
 
 void Texture::createTextureImage(VkDevice device, VkPhysicalDevice physicalDevice, 
@@ -33,7 +33,7 @@ void Texture::createTextureImage(VkDevice device, VkPhysicalDevice physicalDevic
   VkDeviceSize imageSize = texWidth * texHeight * 4;
 
   // Calculate the number of levels in the mip chain.
-  if (Engine::get()->getRenderer()->isMipmapping)
+  if (Engine::get()->getRenderer()->mipmapSetting == Renderer::MipmapSetting::LINEAR) 
     this->mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
   else
     this->mipLevels = 1;
@@ -73,7 +73,7 @@ void Texture::createTextureImage(VkDevice device, VkPhysicalDevice physicalDevic
                     static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
 
   // Transitioned to VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL while generating mipmaps.
-  if (!Engine::get()->getRenderer()->isMipmapping) {
+  if (Engine::get()->getRenderer()->mipmapSetting == Renderer::MipmapSetting::DISABLED) {
     Utils::transitionImageLayout(device, graphicsQueue, commandPool, textureImage, 
                           VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 
                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, mipLevels);
@@ -82,7 +82,7 @@ void Texture::createTextureImage(VkDevice device, VkPhysicalDevice physicalDevic
   vkDestroyBuffer(device, stagingBuffer, nullptr);
   vkFreeMemory(device, stagingBufferMemory, nullptr);
 
-  if (Engine::get()->getRenderer()->isMipmapping) {
+  if (Engine::get()->getRenderer()->mipmapSetting == Renderer::MipmapSetting::LINEAR) {
     generateMipmaps(device, physicalDevice, graphicsQueue, commandPool,
                     textureImage, VK_FORMAT_R8G8B8A8_SRGB, texWidth, texHeight, mipLevels);
   }
@@ -138,7 +138,7 @@ void Texture::createTextureSampler(VkDevice device, VkPhysicalDevice physicalDev
   samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
   samplerInfo.mipLodBias = 0.0f;
   samplerInfo.minLod = 0.0f;
-  if (Engine::get()->getRenderer()->isMipmapping)
+  if (Engine::get()->getRenderer()->mipmapSetting == Renderer::MipmapSetting::LINEAR)
     samplerInfo.maxLod = static_cast<float>(mipLevels);
   else
     samplerInfo.maxLod = 0.0f;

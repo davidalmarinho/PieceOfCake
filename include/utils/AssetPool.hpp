@@ -14,6 +14,7 @@ class AssetPool
 private:
 	inline static std::map<const std::string, std::shared_ptr<Shader>> shadersMap;
 	inline static std::map<const std::string, std::shared_ptr<Texture>> texturesMap;
+	static void cleanTextures();
 	static void cleanShaders();
 	static void insertShader(VkDevice device, const std::string resourceID, const std::string fragmentShaderPath, const std::string vertexShaderPath);
 	static void insertTexture(VkDevice device, const std::string resourceID, const std::string texPath);
@@ -25,7 +26,6 @@ public:
 	static const std::shared_ptr<Texture> getTexture(const std::string resourceID);
 	static std::vector<char> readFile(const std::string& filename);
 
-	static void cleanTextures();
 	static void cleanup();
 
 	template <typename ValueType>

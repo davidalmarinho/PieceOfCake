@@ -13,7 +13,7 @@ private:
 
   // Mipmaping config.
   uint32_t mipLevels;
-  
+
   // Cache
   VkDevice cachedDevice;
   
@@ -33,7 +33,7 @@ public:
   void createTextureImageView(VkDevice device);
   void createTextureSampler(VkDevice device, VkPhysicalDevice physicalDevice);
 
-  void cleanTexture();
+  void clean(VkDevice device);
 
   // Getters and Setters
 
