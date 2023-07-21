@@ -2,6 +2,8 @@
 #include "KeyListener.hpp"
 #include "AssetPool.hpp"
 
+#include "Transform.hpp"
+
 #ifdef unix
 #include <iostream>
 #include <fstream>
@@ -24,6 +26,10 @@ void Engine::init()
 {
   this->printOS();
   this->renderer->init();
+
+  camera.addComponent<Transform>();
+  std::cout << camera.hasComponent<Transform>() << std::endl;
+
   this->printDevKeyBinds();
 }
 

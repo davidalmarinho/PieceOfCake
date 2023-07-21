@@ -4,6 +4,8 @@ add_library(engine
 
 target_include_directories(engine
 	PRIVATE
+	"${PROJECT_SOURCE_DIR}/include/entity_component_system/"
+	"${PROJECT_SOURCE_DIR}/include/entity_component_system/components/"
 	"${PROJECT_SOURCE_DIR}/include/rendering/"
 	"${PROJECT_SOURCE_DIR}/include/rendering/window/"
 	"${PROJECT_SOURCE_DIR}/include/rendering/textures/"
@@ -23,6 +25,7 @@ add_executable(${PROJECT_NAME}
 
 target_include_directories(${PROJECT_NAME} 
 	PRIVATE 
+	"${PROJECT_SOURCE_DIR}/include/entity_component_system/"
 	"${PROJECT_SOURCE_DIR}/include/rendering/window/"
 	"${PROJECT_SOURCE_DIR}/include/rendering/textures/"
 	"${PROJECT_SOURCE_DIR}/include/rendering/"
@@ -39,6 +42,8 @@ target_link_libraries(${PROJECT_NAME}
 	utils
 	window
 	input_device
+	ecs
+	components
 )
 
 # Libraries loading and linking

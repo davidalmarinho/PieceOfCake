@@ -4,6 +4,7 @@
 
 #include "Window.hpp"
 #include "Renderer.hpp"
+#include "ECS.hpp"
 
 class Engine
 {
@@ -15,6 +16,8 @@ private:
   inline static std::shared_ptr<Engine> instance;
   std::unique_ptr<Window> window;
   std::unique_ptr<Renderer> renderer;
+  Manager entitiesManager;
+  Entity &camera = entitiesManager.addEntity();
   void processMemUsage(double& vm_usage, double& resident_set);
   void printOS();
   void printDevKeyBinds();

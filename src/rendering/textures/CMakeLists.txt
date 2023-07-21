@@ -9,6 +9,7 @@ add_library(textures
 
 target_include_directories(textures
 	PRIVATE
+	"${PROJECT_SOURCE_DIR}/include/entity_component_system/"
 	"${PROJECT_SOURCE_DIR}/include/rendering/textures/"
 	"${PROJECT_SOURCE_DIR}/include/rendering/window/"
 	"${PROJECT_SOURCE_DIR}/include/rendering/"
