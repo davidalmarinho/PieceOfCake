@@ -84,13 +84,13 @@ void Engine::toggleGraphicsSettings()
 
 void Engine::printDevKeyBinds()
 {
-  std::cout << "╭──────────────────────────────────────────────────────────────────────────╮\n";
-  std::cout << "  Useful developer keybindings:\n";
-  std::cout << "    SHIFT + F1 -> Toggles Mipmap setting (DISABLED, LINEAR, NEAREST).\n";
-  std::cout << "    SHIFT + F2 -> Iterates MSAA settings (DISABLED, MSAA2X, MSAA4X,\n";
-  std::cout << "                  MSAA8X, MSAA16X, MSAA32X, MSAA64X).\n";
-  std::cout << "    SHIFT + F3 -> Toggles Sample Shading setting (False, True).\n";
-  std::cout << "╰──────────────────────────────────────────────────────────────────────────╯\n";
+  std::cout << " ->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->\n";
+  std::cout << "|  Useful developer keybindings:\n";
+  std::cout << "|    SHIFT + F1 -> Toggles Mipmap setting (DISABLED, LINEAR, NEAREST).\n";
+  std::cout << "|    SHIFT + F2 -> Iterates MSAA settings (DISABLED, MSAA2X, MSAA4X,\n";
+  std::cout << "|                  MSAA8X, MSAA16X, MSAA32X, MSAA64X).\n";
+  std::cout << "|    SHIFT + F3 -> Toggles Sample Shading setting (False, True).\n";
+  std::cout << " ->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->->\n";
 }
 
 void Engine::mainLoop()
