@@ -34,6 +34,14 @@ if(WIN32)
   add_definitions(/std:c++17)
 endif()
 
+# Linux and Mac setting
+if(NOT WIN32 AND CMAKE_BUILD_TYPE MATCHES DEBUG)
+   target_compile_options("${PROJECT_NAME}" 
+    PRIVATE 
+    -g
+  )
+endif()
+
 if(DEFINED ENV{VCPKG_ROOT} AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
     message(STATUS "Using vcpkg")
     set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
@@ -61,14 +69,6 @@ if(WIN32)
   #else()
   #  set(VCPKG_TARGET_TRIPLET "x64-windows-static")
   #endif()
-endif()
-
-# Linux and Mac setting
-if(NOT WIN32)
-   target_compile_options("${PROJECT_NAME}" 
-    PRIVATE 
-    -g
-  )
 endif()
 
 # Delete previous binary
