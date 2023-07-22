@@ -23,6 +23,7 @@ target_include_directories(rendering
 	"${PROJECT_SOURCE_DIR}/include/utils/"
 	"${PROJECT_SOURCE_DIR}/include/tiny_obj_loader/"
 	"${PROJECT_SOURCE_DIR}/include/entity_component_system/"
+	"${PROJECT_SOURCE_DIR}/include/entity_component_system/components/"
 )
 
 target_link_libraries(rendering

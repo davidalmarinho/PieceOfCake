@@ -1,8 +1,8 @@
 #include "ECS.hpp"
 
-void Entity::update()
+void Entity::update(float deltaTime)
 {
-  for (auto &c : componentsVec) c->update();
+  for (auto &c : componentsVec) c->update(deltaTime);
 }
 
 void Entity::draw()
@@ -20,9 +20,9 @@ bool Entity::isActive()
   return this->active;
 }
 
-void Manager::update()
+void Manager::update(float deltaTime)
 {
-  for (auto &e : entitiesList) e->update();
+  for (auto &e : entitiesList) e->update(deltaTime);
 }
 
 void Manager::draw()

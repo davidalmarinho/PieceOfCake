@@ -683,7 +683,7 @@ void Renderer::drawFrame()
     recreateSwapChain();
   } 
   else if (result != VK_SUCCESS) {
-    throw std::runtime_error("failed to present swap chain image!");
+    throw std::runtime_error("Error: Failed to present swap chain image.\n");
   }
 
   // Go to next frame

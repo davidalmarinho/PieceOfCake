@@ -42,7 +42,7 @@ public:
 
   // virtual --means that the function can be override
   virtual void init() {};
-  virtual void update() {}
+  virtual void update(float deltaTime) {}
   virtual void draw() {}
 };
 
@@ -57,7 +57,7 @@ private:
   ComponentBitSet componentBitSet;
 
 public:
-  void update();
+  void update(float deltaTime);
   void draw();
 
   /**
@@ -123,7 +123,7 @@ private:
   std::vector<std::unique_ptr<Entity>> entitiesList;
 
 public:
-  void update();
+  void update(float deltaTime);
   void draw();
   void refresh();
   Entity &addEntity();

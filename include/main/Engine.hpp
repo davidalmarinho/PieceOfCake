@@ -12,12 +12,13 @@ public:
   ~Engine();
 
 private:
-  Engine();
+  Manager entitiesManager;
+  Entity &camera;
   inline static std::shared_ptr<Engine> instance;
   std::unique_ptr<Window> window;
   std::unique_ptr<Renderer> renderer;
-  Manager entitiesManager;
-  Entity &camera = entitiesManager.addEntity();
+
+  Engine();
   void processMemUsage(double& vm_usage, double& resident_set);
   void printOS();
   void printDevKeyBinds();
@@ -51,4 +52,5 @@ public:
 
   const std::unique_ptr<Window> &getWindow() const;
   const std::unique_ptr<Renderer> &getRenderer() const;
+  const Entity &getCamera() const;
 };

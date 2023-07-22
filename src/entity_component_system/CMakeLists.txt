@@ -7,6 +7,7 @@ add_library(ecs
 target_include_directories(ecs
 	PRIVATE
 	"${PROJECT_SOURCE_DIR}/include/entity_component_system/"
+	"${PROJECT_SOURCE_DIR}/include/entity_component_system/components/"
 )
 
 add_subdirectory(components)

@@ -3,6 +3,7 @@
 #include "AssetPool.hpp"
 
 #include "Transform.hpp"
+#include "PerspectiveCamera.hpp"
 
 #ifdef unix
 #include <iostream>
@@ -12,7 +13,7 @@
 // TODO: Windows imports for RAM calculations
 #endif
 
-Engine::Engine()
+Engine::Engine() : camera(entitiesManager.addEntity())
 {
   
 }
@@ -25,10 +26,9 @@ Engine::~Engine()
 void Engine::init()
 {
   this->printOS();
-  this->renderer->init();
+  camera.addComponent<PerspectiveCamera>();
 
-  camera.addComponent<Transform>();
-  std::cout << camera.hasComponent<Transform>() << std::endl;
+  this->renderer->init();
 
   this->printDevKeyBinds();
 }
@@ -125,6 +125,8 @@ void Engine::mainLoop()
       KeyListener::update();
       glfwPollEvents();
 
+      this->entitiesManager.update(delta);
+
       this->toggleGraphicsSettings();
 
       // Call engine logic
@@ -173,6 +175,11 @@ const std::unique_ptr<Window> &Engine::getWindow() const
 const std::unique_ptr<Renderer> &Engine::getRenderer() const
 {
   return renderer;
+}
+
+const Entity &Engine::getCamera() const
+{
+  return this->camera;
 }
 
 // Singleton
