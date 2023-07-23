@@ -2,56 +2,82 @@
 
 #include "KeyListener.hpp"
 
-void PerspectiveCamera::update(float deltaTime)
-{
-  bool goForward = KeyListener::isKeyPressed(GLFW_KEY_W);
-  bool goBack    = KeyListener::isKeyPressed(GLFW_KEY_S);
-  bool goRight   = KeyListener::isKeyPressed(GLFW_KEY_D);
-  bool goLeft    = KeyListener::isKeyPressed(GLFW_KEY_A);
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
 
-  if (!goForward && !goBack && !goRight && !goLeft) return;
+void PerspectiveCamera::moveCamera(float deltaTime)
+{
+  bool goForward  = KeyListener::isKeyPressed(GLFW_KEY_W);
+  bool goBackward = KeyListener::isKeyPressed(GLFW_KEY_S);
+  bool goRight    = KeyListener::isKeyPressed(GLFW_KEY_D);
+  bool goLeft     = KeyListener::isKeyPressed(GLFW_KEY_A);
 
   float moveSpd = 2.0f;
-  float xVec = this->position.x - 0; // TODO: Those 0 should be from targetVec
-  float yVec = this->position.y - 0;
-  float zVec = this->position.z - 0;
 
   // Move around scenario.
-  if (goForward || goBack) {
-    glm::vec3 translateVec = glm::normalize(glm::vec3(xVec, yVec, zVec));
-    translateVec *= deltaTime * moveSpd;
-
-    if (goForward) {
-      this->position -= translateVec;
-    }
-    else if (goBack) {
-      this->position += translateVec;
-    } 
+  if (goForward) {
+    this->position += moveSpd * deltaTime * targetPosition;
+  }
+  else if (goBackward) {
+    this->position -= moveSpd * deltaTime * targetPosition;
   }
 
-  if (goRight || goLeft) {
-    glm::vec3 translateVec = glm::normalize(glm::vec3(xVec, yVec, zVec));
-
-    // Rotate vector by 90º degrees in xx and yy axis.
-    glm::mat4 rotationMat(1);
-    rotationMat = glm::rotate(rotationMat, glm::radians(90.0f), glm::vec3(0.0, 0.0, 1.0));
-    translateVec = glm::vec3(rotationMat * glm::vec4(translateVec.x, translateVec.y, 0.0f, 1.0) * moveSpd * deltaTime);
-
-    if (goRight) {
-      this->position += translateVec;
-    }
-    else if (goLeft) {
-      this->position -= translateVec;
-    }
+  if (goRight) {
+    this->position += moveSpd * deltaTime * glm::normalize(glm::cross(targetPosition, glm::vec3(0.0f, 0.0f, 1.0f)));
   }
+  else if (goLeft) {
+    this->position -= moveSpd * deltaTime * glm::normalize(glm::cross(targetPosition, glm::vec3(0.0f, 0.0f, 1.0f)));
+  }
+}
+
+void PerspectiveCamera::adjustDirection(float deltaTime)
+{
+  bool up    = KeyListener::isKeyPressed(GLFW_KEY_UP);
+  bool down  = KeyListener::isKeyPressed(GLFW_KEY_DOWN);
+  bool right = KeyListener::isKeyPressed(GLFW_KEY_RIGHT);
+  bool left  = KeyListener::isKeyPressed(GLFW_KEY_LEFT);
+
+  float moveSpd = 60.0f;
+
+  if (up) {
+    this->pitch += moveSpd * deltaTime;
+  }
+  else if (down) {
+    this->pitch -= moveSpd * deltaTime;
+  }
+
+  if (left) {
+    this->yaw += moveSpd * deltaTime;
+  }
+  else if (right) {
+    this->yaw -= moveSpd * deltaTime;
+  }
+
+  if(pitch > 89.0f)
+    pitch =  89.0f;
+
+  if(pitch < -89.0f)
+    pitch = -89.0f;
+
+  glm::vec3 direction;
+  direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+  direction.y = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+  direction.z = sin(glm::radians(pitch));
+  this->targetPosition = glm::normalize(direction);
+}
+
+void PerspectiveCamera::update(float deltaTime)
+{
+  this->moveCamera(deltaTime);
+  this->adjustDirection(deltaTime);
 }
 
 const glm::mat4& PerspectiveCamera::getViewMatrix()
 {
   this->viewMatrix = glm::lookAt(
-    this->position,              // Camera position.
-    glm::vec3(0.0f, 0.0f, 0.0f), // Camera looking at.
-    glm::vec3(0.0f, 0.0f, 1.0f)  // Up vector.
+    this->position,                        // Camera position.
+    this->position + this->targetPosition, // this->position + this->targetPosition,        // Camera looking at.
+    glm::vec3(0.0f, 0.0f, 1.0f)            // Up vector.
   );
 
   return this->viewMatrix;
