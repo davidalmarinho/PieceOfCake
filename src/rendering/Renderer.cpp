@@ -1,10 +1,10 @@
 #include <unordered_map>
+#include <algorithm>
 
 #include "Renderer.hpp"
 #include "Engine.hpp"
 
-#define TINYOBJLOADER_IMPLEMENTATION
-#include "tiny_obj_loader.h"
+#include "ModelRenderer.hpp"
 
 Renderer::MipmapSetting operator++(Renderer::MipmapSetting& mipmapSetting, int)
 {
@@ -218,6 +218,7 @@ void Renderer::initVulkan()
   tex->createTextureSampler(device, physicalDevice);
 
   this->loadModels();
+  AssetPool::addModel("model", "assets/models/viking_room.obj");
 
   std::shared_ptr<Shader> shader = AssetPool::getShader("texture");
   shader->createUniformBuffers();
@@ -277,7 +278,7 @@ void Renderer::clean()
   this->swapChain.reset();
   AssetPool::cleanup();
   this->pipeline.reset();
-  this->model.reset();
+  // TODO: this->model.reset();
 
   vkDestroyCommandPool(device, commandPool, nullptr);
 
@@ -311,65 +312,9 @@ void Renderer::loadModels()
     4, 5, 6, 6, 7, 4
   };*/
 
-  std::vector<Model::Vertex> vertices;
-  std::vector<uint32_t> indices;
+  
 
-  const std::string MODEL_PATH = "assets/models/viking_room.obj";
-
-  /* The attrib container holds all of the positions, normals and texture 
-   * coordinates in its attrib.vertices, attrib.normals and attrib.texcoords 
-   * vectors. The shapes container contains all of the separate objects and 
-   * their faces. Each face consists of an array of vertices, and each vertex 
-   * contains the indices of the position, normal and texture coordinate attributes.
-   */
-  tinyobj::attrib_t attrib;
-  std::vector<tinyobj::shape_t> shapes;
-  std::vector<tinyobj::material_t> materials;
-  std::string warn, err;
-
-  if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, MODEL_PATH.c_str())) {
-    throw std::runtime_error(warn + err);
-  }
-
-  std::unordered_map<Model::Vertex, uint32_t> uniqueVertices{};
-
-  for (const auto& shape : shapes) {
-    for (const auto& index : shape.mesh.indices) {
-      Model::Vertex vertex{};
-
-      vertex.pos = {
-        // Multiply the index by 3 because the vertices is an array of positions
-        // that is [X, Y, Z, X, Y, Z, X, Y, Z ...] and, by this way, we can access
-        // to x, y and z coordinates.
-        attrib.vertices[3 * index.vertex_index + 0],
-        attrib.vertices[3 * index.vertex_index + 1],
-        attrib.vertices[3 * index.vertex_index + 2]
-      };
-
-      // Flip the vertical component of the texture coordinates because 
-      // we haveve uploaded the image into Vulkan in a top to bottom orientation.
-      vertex.texCoords = {
-        attrib.texcoords[2 * index.texcoord_index + 0],
-        1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
-      };
-
-      vertex.color = {1.0f, 1.0f, 1.0f};
-
-      /**
-       * Every time we read a vertex from the OBJ file, we will check if it was already 
-       * seen a vertex with the exact same position and texture coordinates before. 
-       * If not, we add it to vertices and store its index in the uniqueVertices container. 
-       */
-      if (uniqueVertices.count(vertex) == 0) {
-        uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
-        vertices.push_back(vertex);
-      }
-
-      indices.push_back(uniqueVertices[vertex]);
-    }
-  }
-
-  this->model = std::make_unique<Model>(vertices, indices);
+  // this->model = std::make_unique<Model>(MODEL_PATH, vertices, indices);
 }
 
 void Renderer::createInstance()
@@ -602,9 +547,12 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
   scissor.extent = swapChain->getSwapChainExtent();
   vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-  this->model->bind(commandBuffer);
-  this->pipeline->getDescriptorLayout()->bind(commandBuffer);
-  this->model->draw(commandBuffer);
+  for (std::weak_ptr<Model> m : modelsVec) {
+    std::shared_ptr<Model> model = m.lock();
+    model->bind(commandBuffer);
+    this->pipeline->getDescriptorLayout()->bind(commandBuffer);
+    model->draw(commandBuffer);
+  }
 
   vkCmdEndRenderPass(commandBuffer);
 
@@ -803,6 +751,21 @@ bool Renderer::checkValidationLayerSupport()
   }
 
   return true;
+}
+
+void Renderer::addModel(std::weak_ptr<Model> model)
+{
+  bool found = false; // TODO: modelVec.empty() || !(std::count(modelVec.begin(), modelVec.end(), model));
+
+  if (!found) {
+    modelsVec.insert(modelsVec.begin(), model);
+  }
+}
+
+void Renderer::addEntity(Entity& e)
+{
+  std::weak_ptr<Model> m = e.getComponent<ModelRenderer>().model;
+  addModel(m);
 }
 
 // Getters and Setters

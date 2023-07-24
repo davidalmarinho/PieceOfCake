@@ -19,7 +19,6 @@
 #include <array>
 
 #include "Window.hpp"
-#include "Model.hpp"
 #include "VulkanDebugger.hpp"
 #include "AssetPool.hpp"
 #include "KeyListener.hpp"
@@ -27,6 +26,9 @@
 #include "QueueFamilyIndices.hpp"
 #include "SwapChain.hpp"
 #include "Texture.hpp"
+
+#include "Model.hpp"
+#include "ECS.hpp"
 
 // Frames which should be processed concurrently.
 const int MAX_FRAMES_IN_FLIGHT = 2;
@@ -92,12 +94,15 @@ public:
   VkSampleCountFlagBits getMsaaSample();
   VkSampleCountFlagBits getMaxMsaaSamples();
 
+  void addEntity(Entity& e);
+
 private:
   VkSurfaceKHR surface;
-  std::unique_ptr<Model> model;
   std::unique_ptr<VulkanDebugger> vulkanDebugger;
   std::unique_ptr<SwapChain> swapChain;
   std::unique_ptr<Pipeline> pipeline;
+
+  std::vector<std::weak_ptr<Model>> modelsVec;
 
   VkDevice device;
   VkInstance vkInstance;
@@ -117,6 +122,8 @@ private:
   VkSampleCountFlagBits msaaSamples    = VK_SAMPLE_COUNT_1_BIT;
   VkSampleCountFlagBits maxMsaaSamples = VK_SAMPLE_COUNT_1_BIT; // Keeps track of how many samples the hardware can use.
   VkSampleCountFlagBits getMaxUsableSampleCount();
+
+  void addModel(std::weak_ptr<Model> model);
 
   void createInstance();
   void pickPhysicalDevice();

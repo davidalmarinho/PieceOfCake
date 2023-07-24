@@ -2,6 +2,9 @@
 #include <iostream>
 #include <fstream>
 
+#define TINYOBJLOADER_IMPLEMENTATION
+#include "tiny_obj_loader.h"
+
 void AssetPool::insertShader(VkDevice device, const std::string resourceID, const std::string fragmentShaderPath, const std::string vertexShaderPath)
 {
 	std::shared_ptr<Shader> shader = std::make_shared<Shader>(device, fragmentShaderPath, vertexShaderPath);
@@ -105,6 +108,102 @@ const std::shared_ptr<Texture> AssetPool::getTexture(const std::string resourceI
 	return tex;
 }
 
+void AssetPool::insertModel(const std::string resourceID, const std::string MODEL_PATH)
+{
+	std::vector<Model::Vertex> vertices;
+  std::vector<uint32_t> indices;
+
+  // const std::string MODEL_PATH = "assets/models/viking_room.obj";
+
+  /* The attrib container holds all of the positions, normals and texture 
+   * coordinates in its attrib.vertices, attrib.normals and attrib.texcoords 
+   * vectors. The shapes container contains all of the separate objects and 
+   * their faces. Each face consists of an array of vertices, and each vertex 
+   * contains the indices of the position, normal and texture coordinate attributes.
+   */
+  tinyobj::attrib_t attrib;
+  std::vector<tinyobj::shape_t> shapes;
+  std::vector<tinyobj::material_t> materials;
+  std::string warn, err;
+
+  if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, MODEL_PATH.c_str())) {
+    throw std::runtime_error(warn + err);
+  }
+
+  std::unordered_map<Model::Vertex, uint32_t> uniqueVertices{};
+
+  for (const auto& shape : shapes) {
+    for (const auto& index : shape.mesh.indices) {
+      Model::Vertex vertex{};
+
+      vertex.pos = {
+        // Multiply the index by 3 because the vertices is an array of positions
+        // that is [X, Y, Z, X, Y, Z, X, Y, Z ...] and, by this way, we can access
+        // to x, y and z coordinates.
+        attrib.vertices[3 * index.vertex_index + 0],
+        attrib.vertices[3 * index.vertex_index + 1],
+        attrib.vertices[3 * index.vertex_index + 2]
+      };
+
+      // Flip the vertical component of the texture coordinates because 
+      // we haveve uploaded the image into Vulkan in a top to bottom orientation.
+      vertex.texCoords = {
+        attrib.texcoords[2 * index.texcoord_index + 0],
+        1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
+      };
+
+      vertex.color = {1.0f, 1.0f, 1.0f};
+
+      /**
+       * Every time we read a vertex from the OBJ file, we will check if it was already 
+       * seen a vertex with the exact same position and texture coordinates before. 
+       * If not, we add it to vertices and store its index in the uniqueVertices container. 
+       */
+      if (uniqueVertices.count(vertex) == 0) {
+        uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
+        vertices.push_back(vertex);
+      }
+
+      indices.push_back(uniqueVertices[vertex]);
+    }
+  }
+
+	std::shared_ptr<Model> model = std::make_shared<Model>(MODEL_PATH, vertices, indices);
+	AssetPool::modelsMap.insert({ resourceID, model });
+}
+
+void AssetPool::addModel(const std::string resourceID, const std::string modelPath)
+{
+	// Add to hash map if it is empty --because if it is empty it is certain
+	// that the texture hasn't been added yet.
+	if (AssetPool::modelsMap.empty()) {
+		AssetPool::insertModel(resourceID, modelPath);
+		return;
+	}
+
+	// Check if the resouces ID is the same
+	if (AssetPool::hasSameResourceID(resourceID, modelsMap)) return;
+
+	// TODO: Abstract this --An idea might be creating an interface so there is the possibility of calling FileName.getFilepath();
+	// Resource's ID wasn't the same. Checking for file names but only in debugging mode.
+#ifndef NDEBUG
+	for (auto mapObject : modelsMap) {
+		if (mapObject.second->FILEPATH.compare(modelPath) == 0) {
+			std::cout << "Warning: You the asset '" << modelPath << "', that has been already added before.\n";
+		}
+	}
+#endif
+
+	// The texture is different and must be added t the map.
+	AssetPool::insertModel(resourceID, modelPath);
+}
+
+std::shared_ptr<Model> AssetPool::getModel(const std::string resourceID)
+{
+	auto mapObj = modelsMap.find(resourceID);
+	return mapObj->second;
+}
+
 std::vector<char> AssetPool::readFile(const std::string& filename)
 {
 	std::ifstream file(filename, std::ios::ate | std::ios::binary);
@@ -135,8 +234,14 @@ void AssetPool::cleanTextures()
 	texturesMap.clear();
 }
 
+void AssetPool::cleanModels()
+{
+	modelsMap.clear();
+}
+
 void AssetPool::cleanup()
 {
 	AssetPool::cleanTextures();
 	AssetPool::cleanShaders();
+	AssetPool::cleanModels();
 }

@@ -4,6 +4,7 @@
 #include "Utils.hpp"
 
 #include "PerspectiveCamera.hpp"
+#include "Transform.hpp"
 
 Shader::Shader(VkDevice device, const std::string fragmentShaderFilepath, const std::string vertexShaderFilepath) : 
   cachedDevice(device), fragmentShaderFilepath(fragmentShaderFilepath), vertexShaderFilepath(vertexShaderFilepath)
@@ -56,10 +57,11 @@ void Shader::updateUniformBuffer(uint32_t currentFrame)
   float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
   UniformBufferObject ubo{};
-  
+
   // ubo.model = TranslationMatrix * RotationMatrix * ScaleMatrix; TODO:
   // ubo.model = Engine::get()->getCamera().getComponent<PerspectiveCamera>().quat; // glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 0.0f, 1.0f)); // glm::mat4(1.0f);
-  ubo.model = glm::mat4(1.0f);
+  // ubo.model = glm::mat4(1.0f);
+  ubo.model = Engine::get()->ent3DTest.getComponent<Transform>().getTranslationMatrix() * Engine::get()->ent3DTest.getComponent<Transform>().getScaleMatrix() * Engine::get()->ent3DTest.getComponent<Transform>().getRotationMatrix();
   ubo.view = Engine::get()->getCamera().getComponent<PerspectiveCamera>().getViewMatrix();
   // ubo.view = glm::lookAt(glm::vec3(z, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
   ubo.proj = glm::perspective(glm::radians(45.0f), 

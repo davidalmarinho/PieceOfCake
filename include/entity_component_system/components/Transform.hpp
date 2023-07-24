@@ -6,20 +6,33 @@
 
 class Transform : public Component
 {
-public:
+private:
   glm::vec3 position;
-  glm::vec3 rotation;
-  
-  // For rotation. Quaternions.
-  // glm::mat4 quat;
-  // float rotAngle = 0.0f; // In degrees.
-  // glm::vec3 rotationAxis = glm::vec3(0.0f, 0.0f, 1.0f);
+  glm::vec3 scaleVec = glm::vec3{1.0f};
+  glm::vec3 rotation = glm::vec3{0.0f};
 
-  // For scaling.
-  // glm::mat4 scalingMatrix = ;
-  
+public:  
   Transform(glm::vec3 position);
   Transform();
   
   void build(glm::vec3 position);
+  void update(float deltaTime) override;
+
+  void translate(glm::vec3 translation);
+  void translate(float x, float y, float z);
+  void rotate(float xAngle, float yAngle, float zAngle);
+  void scale(float x, float y, float z);
+  void scale(glm::vec3 scale);
+
+  glm::mat4 getTranslationMatrix();
+  glm::mat4 getRotationMatrix();
+  glm::mat4 getScaleMatrix();
+
+  // Encapsulation.
+  const glm::vec3 getPosition();
+  void setPosition(float x, float y, float z);
+  const glm::vec3 getScale();
+  void setScale(float x, float y, float z);
+  const glm::vec3 getRotation();
+  void setRotation(float xAngleDegrees, float yAngleDegrees, float zAngleDegrees);
 };

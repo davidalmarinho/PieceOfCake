@@ -7,6 +7,7 @@
 #include <vulkan/vulkan.h>
 #include <array>
 #include <glm/gtx/hash.hpp>
+#include <string>
 
 class Model
 {
@@ -28,8 +29,10 @@ public:
     bool operator==(const Vertex& other) const;
   };
 
-  Model(const std::vector<Vertex> &vertices, std::vector<uint32_t> indices);
+  Model(const std::string FILEPATH, const std::vector<Vertex> &vertices, std::vector<uint32_t> indices);
   ~Model();
+
+  const std::string FILEPATH;
 
   void bind(VkCommandBuffer commandBuffer);
   void draw(VkCommandBuffer commandBuffer);

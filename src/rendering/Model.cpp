@@ -7,7 +7,8 @@
 #include <cstring>
 #include <stdexcept>
 
-Model::Model(const std::vector<Vertex> &vertices,  std::vector<uint32_t> indices) : cachedDevice(Engine::get()->getRenderer()->getDevice())
+Model::Model(const std::string FILEPATH, const std::vector<Vertex> &vertices,  
+             std::vector<uint32_t> indices) : FILEPATH(FILEPATH), cachedDevice(Engine::get()->getRenderer()->getDevice())
 {
   this->createVertexBuffer(vertices);
   this->createIndexBuffer(indices);

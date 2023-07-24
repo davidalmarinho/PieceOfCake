@@ -13,8 +13,8 @@ class Entity;
 using ComponentID = std::size_t;
 inline ComponentID getComponentTypeID()
 {
-    static ComponentID lastID = 0;
-    return lastID++; 
+  static ComponentID lastID = 0;
+  return lastID++; 
 }
 constexpr std::size_t maxComponents = 32;
 using ComponentBitSet = std::bitset<maxComponents>;

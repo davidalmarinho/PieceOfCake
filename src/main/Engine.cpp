@@ -4,6 +4,7 @@
 
 #include "Transform.hpp"
 #include "PerspectiveCamera.hpp"
+#include "ModelRenderer.hpp"
 
 #ifdef unix
 #include <iostream>
@@ -13,7 +14,7 @@
 // TODO: Windows imports for RAM calculations
 #endif
 
-Engine::Engine() : camera(entitiesManager.addEntity())
+Engine::Engine() : camera(entitiesManager.addEntity()), ent3DTest(entitiesManager.addEntity())
 {
   
 }
@@ -29,6 +30,18 @@ void Engine::init()
   camera.addComponent<PerspectiveCamera>();
 
   this->renderer->init();
+
+  /*for (int i = 0; i < 1; i++) {
+    Entity &e(entitiesManager.addEntity());
+    e.addComponent<Transform>(glm::vec3(i * 2.0f, 0, 0));
+    e.addComponent<ModelRenderer>(AssetPool::getModel("model"));
+
+    this->renderer->addEntity(e);
+  }*/
+
+  ent3DTest.addComponent<Transform>(glm::vec3());
+  ent3DTest.addComponent<ModelRenderer>(AssetPool::getModel("model"));
+  this->renderer->addEntity(ent3DTest);
 
   this->printDevKeyBinds();
 }
