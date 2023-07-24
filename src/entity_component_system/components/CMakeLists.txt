@@ -1,4 +1,5 @@
-# find_package(glfw3 3.3 REQUIRED)
+find_package(glm REQUIRED)
+find_package(Vulkan REQUIRED)
 
 add_library(components
 	Transform.cpp
@@ -14,6 +15,7 @@ target_include_directories(components
 	"${PROJECT_SOURCE_DIR}/include/rendering/"
 )
 
-# target_link_libraries(input_device
-# 	glfw
-# )
+target_link_libraries(components
+	glm::glm
+	Vulkan::Vulkan
+)
