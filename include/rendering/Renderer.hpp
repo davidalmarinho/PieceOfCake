@@ -29,6 +29,7 @@
 
 #include "Model.hpp"
 #include "ECS.hpp"
+#include "ModelRenderer.hpp"
 
 // Frames which should be processed concurrently.
 const int MAX_FRAMES_IN_FLIGHT = 2;
@@ -96,13 +97,15 @@ public:
 
   void addEntity(Entity& e);
 
+  // TODO: Make private
+  std::vector<std::reference_wrapper<ModelRenderer>> modelsVec;
+
 private:
   VkSurfaceKHR surface;
   std::unique_ptr<VulkanDebugger> vulkanDebugger;
   std::unique_ptr<SwapChain> swapChain;
   std::unique_ptr<Pipeline> pipeline;
 
-  std::vector<std::weak_ptr<Model>> modelsVec;
 
   VkDevice device;
   VkInstance vkInstance;
@@ -123,7 +126,7 @@ private:
   VkSampleCountFlagBits maxMsaaSamples = VK_SAMPLE_COUNT_1_BIT; // Keeps track of how many samples the hardware can use.
   VkSampleCountFlagBits getMaxUsableSampleCount();
 
-  void addModel(std::weak_ptr<Model> model);
+  void addModel(ModelRenderer& model);
 
   void createInstance();
   void pickPhysicalDevice();

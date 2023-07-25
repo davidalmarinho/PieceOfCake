@@ -58,18 +58,18 @@ void Shader::updateUniformBuffer(uint32_t currentFrame)
 
   UniformBufferObject ubo{};
 
-  // ubo.model = TranslationMatrix * RotationMatrix * ScaleMatrix; TODO:
-  // ubo.model = Engine::get()->getCamera().getComponent<PerspectiveCamera>().quat; // glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 0.0f, 1.0f)); // glm::mat4(1.0f);
-  // ubo.model = glm::mat4(1.0f);
-  ubo.model = Engine::get()->ent3DTest.getComponent<Transform>().getTranslationMatrix() * Engine::get()->ent3DTest.getComponent<Transform>().getScaleMatrix() * Engine::get()->ent3DTest.getComponent<Transform>().getRotationMatrix();
-  ubo.view = Engine::get()->getCamera().getComponent<PerspectiveCamera>().getViewMatrix();
-  // ubo.view = glm::lookAt(glm::vec3(z, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-  ubo.proj = glm::perspective(glm::radians(45.0f), 
-                              Engine::get()->getRenderer()->getSwapChain()->getSwapChainExtent().width / 
-                              static_cast<float>(Engine::get()->getRenderer()->getSwapChain()->getSwapChainExtent().height), 
-                              0.1f, 10.0f);
+  for (int i = 0; i < 1; i++) {
+    ModelRenderer& m = Engine::get()->getRenderer()->modelsVec[i];
 
-  ubo.proj[1][1] *= -1;
+    ubo.model = m.entity->getComponent<Transform>().getTranslationMatrix() * m.entity->getComponent<Transform>().getScaleMatrix() * m.entity->getComponent<Transform>().getRotationMatrix();
+    ubo.view = Engine::get()->getCamera().getComponent<PerspectiveCamera>().getViewMatrix();
+    ubo.proj = glm::perspective(glm::radians(45.0f), 
+                                Engine::get()->getRenderer()->getSwapChain()->getSwapChainExtent().width / 
+                                static_cast<float>(Engine::get()->getRenderer()->getSwapChain()->getSwapChainExtent().height), 
+                                0.1f, 10.0f);
+
+    ubo.proj[1][1] *= -1;
+  }
 
   memcpy(uniformBuffersMapped[currentFrame], &ubo, sizeof(ubo));
 }

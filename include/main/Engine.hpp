@@ -11,8 +11,9 @@ class Engine
 public:
   ~Engine();
 
-  Manager entitiesManager; // TODO: Make this private when tests end.
-  Entity &ent3DTest;
+  // TODO: Make this private when tests end.
+  Manager entitiesManager;
+
 private:
   Entity &camera;
   inline static std::shared_ptr<Engine> instance;

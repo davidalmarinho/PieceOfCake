@@ -547,8 +547,8 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
   scissor.extent = swapChain->getSwapChainExtent();
   vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-  for (std::weak_ptr<Model> m : modelsVec) {
-    std::shared_ptr<Model> model = m.lock();
+  for (ModelRenderer& m : modelsVec) {
+    std::shared_ptr<Model> model = m.model.lock();
     model->bind(commandBuffer);
     this->pipeline->getDescriptorLayout()->bind(commandBuffer);
     model->draw(commandBuffer);
@@ -753,7 +753,7 @@ bool Renderer::checkValidationLayerSupport()
   return true;
 }
 
-void Renderer::addModel(std::weak_ptr<Model> model)
+void Renderer::addModel(ModelRenderer& model)
 {
   bool found = false; // TODO: modelVec.empty() || !(std::count(modelVec.begin(), modelVec.end(), model));
 
@@ -764,7 +764,7 @@ void Renderer::addModel(std::weak_ptr<Model> model)
 
 void Renderer::addEntity(Entity& e)
 {
-  std::weak_ptr<Model> m = e.getComponent<ModelRenderer>().model;
+  ModelRenderer& m = e.getComponent<ModelRenderer>();
   addModel(m);
 }
 
