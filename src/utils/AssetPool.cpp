@@ -204,6 +204,13 @@ std::shared_ptr<Model> AssetPool::getModel(const std::string resourceID)
 	return mapObj->second;
 }
 
+void AssetPool::loadModels()
+{
+	for (auto mpObj : modelsMap) {
+		mpObj.second->init();
+	}
+}
+
 std::vector<char> AssetPool::readFile(const std::string& filename)
 {
 	std::ifstream file(filename, std::ios::ate | std::ios::binary);

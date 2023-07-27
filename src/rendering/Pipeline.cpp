@@ -9,6 +9,10 @@
 #include <cstring>
 #include <memory>
 
+#include "PerspectiveCamera.hpp"
+#include "Transform.hpp"
+#include "Utils.hpp"
+
 ColorBlending::ColorBlending()
 {
   // Colorblending setup.
@@ -48,10 +52,13 @@ Pipeline::Pipeline(VkDevice device, VkRenderPass renderPass) : cachedDevice(devi
 
 Pipeline::~Pipeline()
 {
+  for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    vkDestroyBuffer(cachedDevice, uniformBuffers[i], nullptr);
+    vkFreeMemory(cachedDevice, uniformBuffersMemory[i], nullptr);
+  }
+
   vkDestroyPipeline(cachedDevice, graphicsPipeline, nullptr);
   vkDestroyPipelineLayout(cachedDevice, pipelineLayout, nullptr);
-
-  vkDestroyRenderPass(cachedDevice, cachedRenderPass, nullptr);
 
   this->descriptorLayout.reset();
 }
@@ -253,6 +260,52 @@ VkPipelineRasterizationStateCreateInfo Pipeline::setupRasterizationStage()
   return rasterizer;
 }
 
+void Pipeline::updateUniformBuffer(uint32_t currentFrame, int modelRendererIndex)
+{
+  UniformBufferObject ubo{};
+
+  if (Engine::get()->getRenderer()->getEntity(modelRendererIndex)) {
+    const Entity& e = Engine::get()->getRenderer()->getEntity(modelRendererIndex).value();
+    ubo.model = e.getComponent<Transform>().getTranslationMatrix();
+  }
+  else {
+    ubo.model = glm::translate(glm::vec3(0, 0, 0));
+  }
+
+  ubo.view = Engine::get()->getCamera().getComponent<PerspectiveCamera>().getViewMatrix();
+  ubo.proj = glm::perspective(glm::radians(45.0f), 
+                              Engine::get()->getRenderer()->getSwapChain()->getSwapChainExtent().width / 
+                              static_cast<float>(Engine::get()->getRenderer()->getSwapChain()->getSwapChainExtent().height), 
+                              0.1f, 10.0f);
+
+  ubo.proj[1][1] *= -1;
+
+  memcpy(uniformBuffersMapped[currentFrame], &ubo, sizeof(ubo));
+}
+
+void Pipeline::createUniformBuffers()
+{
+  VkDeviceSize bufferSize = sizeof(Pipeline::UniformBufferObject);
+
+  uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+  uniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
+  uniformBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
+
+  VkDevice device = Engine::get()->getRenderer()->getDevice();
+  VkPhysicalDevice physicalDevice = Engine::get()->getRenderer()->getPhysicalDevice();
+
+  for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    Utils::createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 
+                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
+                 uniformBuffers[i], uniformBuffersMemory[i], device, physicalDevice);
+
+    // Map the buffer right after creation using vkMapMemory to get a pointer to 
+    // which we can write the data later on.
+    // This technique is called "persistent mapping".
+    vkMapMemory(device, uniformBuffersMemory[i], 0, bufferSize, 0, &uniformBuffersMapped[i]);
+  }
+}
+
 VkPipelineLayout Pipeline::getPipelineLayout()
 {
   return this->pipelineLayout;
@@ -266,4 +319,9 @@ VkPipeline Pipeline::getGraphicsPipeline()
 const std::unique_ptr<DescriptorLayout> &Pipeline::getDescriptorLayout() const
 {
   return this->descriptorLayout;
+}
+
+const std::vector<VkBuffer> Pipeline::getUniformBuffers()
+{
+  return this->uniformBuffers;
 }

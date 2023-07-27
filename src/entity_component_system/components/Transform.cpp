@@ -21,10 +21,7 @@ void Transform::build(glm::vec3 position)
 
 void Transform::update(float deltaTime)
 {
-  // TODO: Remove this tests.
-  translate(glm::vec3(0.5f * deltaTime, 0.5f * deltaTime, 0.5f * deltaTime));
-  scale(0.5f * deltaTime, 0.5f * deltaTime, 0.5f * deltaTime);
-  rotate(-20.0f * deltaTime, -20.0f * deltaTime, -20.0f * deltaTime);
+  // this->entity->transform = this;
 }
 
 void Transform::translate(glm::vec3 translation)

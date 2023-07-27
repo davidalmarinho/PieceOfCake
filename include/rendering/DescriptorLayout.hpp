@@ -5,7 +5,9 @@
 
 #include "Shader.hpp"
 #include "Texture.hpp"
+#include "Pipeline.hpp"
 
+class Pipeline;
 class DescriptorLayout
 {
 public:
@@ -13,8 +15,8 @@ public:
   ~DescriptorLayout();
 
   void createDescriptorPool();
-  void createDescriptorSets(Shader* shader, Texture* texture);
-  void bind(VkCommandBuffer commandBuffer);
+  void createDescriptorSets(Pipeline* pipeline, Texture* texture);
+  void bind(Pipeline* pipeline, VkCommandBuffer commandBuffer);
 
   // Getters and Setters
 
@@ -28,7 +30,6 @@ private:
   VkDescriptorSetLayout descriptorSetLayout;
 
   void createDescriptorSetLayout(VkDevice device);
-
 
   // Cache
   VkDevice cachedDevice;

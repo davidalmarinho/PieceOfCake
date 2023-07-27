@@ -73,7 +73,7 @@ void DescriptorLayout::createDescriptorPool()
   }
 }
 
-void DescriptorLayout::createDescriptorSets(Shader* shader, Texture* texture)
+void DescriptorLayout::createDescriptorSets(Pipeline* pipeline, Texture* texture)
 {
   // Create one descriptor set for each frame in flight, all with the same layout.
   std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
@@ -91,9 +91,9 @@ void DescriptorLayout::createDescriptorSets(Shader* shader, Texture* texture)
   for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
     // Specify the buffer and the region within it that contains the data for the descriptor.
     VkDescriptorBufferInfo bufferInfo{};
-    bufferInfo.buffer = shader->getUniformBuffers()[i];
+    bufferInfo.buffer = pipeline->getUniformBuffers()[i];
     bufferInfo.offset = 0;
-    bufferInfo.range = sizeof(Shader::UniformBufferObject);
+    bufferInfo.range = sizeof(Pipeline::UniformBufferObject);
     
     VkDescriptorImageInfo imageInfo{};
     imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -125,10 +125,10 @@ void DescriptorLayout::createDescriptorSets(Shader* shader, Texture* texture)
   }
 }
 
-void DescriptorLayout::bind(VkCommandBuffer commandBuffer)
+void DescriptorLayout::bind(Pipeline* p, VkCommandBuffer commandBuffer)
 {
   vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                          Engine::get()->getRenderer()->getPipeline()->getPipelineLayout(), 0, 1,
+                          p->getPipelineLayout(), 0, 1,
                           &(descriptorSets[Engine::get()->getRenderer()->getSwapChain()->currentFrame]), 0, nullptr);
 }
 

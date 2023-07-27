@@ -81,6 +81,7 @@ public:
   void restart();
 
   void init();
+  void initRendering();
   void drawFrame();
 
   // Getters and Setters
@@ -90,22 +91,19 @@ public:
   VkCommandPool getCommandPool();
   VkQueue getGraphicsQueue();
   const std::unique_ptr<SwapChain> &getSwapChain() const;
-  const std::unique_ptr<Pipeline> &getPipeline() const;
 
   VkSampleCountFlagBits getMsaaSample();
   VkSampleCountFlagBits getMaxMsaaSamples();
+  const std::optional<std::reference_wrapper<Entity>> getEntity(int index);
 
   void addEntity(Entity& e);
-
-  // TODO: Make private
-  std::vector<std::reference_wrapper<ModelRenderer>> modelsVec;
-
+  
 private:
   VkSurfaceKHR surface;
   std::unique_ptr<VulkanDebugger> vulkanDebugger;
   std::unique_ptr<SwapChain> swapChain;
-  std::unique_ptr<Pipeline> pipeline;
-
+  std::vector<std::unique_ptr<Pipeline>> pipelines;
+  std::vector<std::reference_wrapper<Entity>> entitiesVec;
 
   VkDevice device;
   VkInstance vkInstance;
@@ -114,8 +112,6 @@ private:
 
   VkQueue graphicsQueue;
   VkQueue presentQueue;
-
-  void initVulkan();
 
   // Command Pool
   VkCommandPool commandPool;
@@ -126,7 +122,7 @@ private:
   VkSampleCountFlagBits maxMsaaSamples = VK_SAMPLE_COUNT_1_BIT; // Keeps track of how many samples the hardware can use.
   VkSampleCountFlagBits getMaxUsableSampleCount();
 
-  void addModel(ModelRenderer& model);
+  void initVulkan();
 
   void createInstance();
   void pickPhysicalDevice();
@@ -139,5 +135,4 @@ private:
   bool checkDeviceExtensionSupport(VkPhysicalDevice device);
   std::vector<const char *> getRequiredExtensions();
   bool checkValidationLayerSupport();
-  void loadModels();
 };

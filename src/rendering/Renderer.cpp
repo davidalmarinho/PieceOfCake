@@ -1,5 +1,7 @@
 #include <unordered_map>
 #include <algorithm>
+#include <optional>
+#include <iostream>
 
 #include "Renderer.hpp"
 #include "Engine.hpp"
@@ -199,13 +201,17 @@ void Renderer::initVulkan()
   // this->msaaSamples = VK_SAMPLE_COUNT_1_BIT;
 
   createLogicalDevice();
+}
 
-  AssetPool::addTexture(device, "img_tex", "assets/textures/viking_room.png");
-  AssetPool::addShader(device, "texture", "shaders/texture_fragment_shader.spv", "shaders/texture_vertex_shader.spv");
-
+void Renderer::initRendering()
+{
   this->swapChain = std::make_unique<SwapChain>(physicalDevice, device, surface, msaaSamples);
-  this->pipeline = std::make_unique<Pipeline>(device, swapChain->getRenderPass());
-  this->pipeline->createGraphicsPipeline(device, swapChain->getSwapChainImageFormat(), swapChain->getRenderPass(), this->msaaSamples);
+  for (int i = 0; i < this->entitiesVec.size(); i++) {
+    std::unique_ptr<Pipeline> pipe = std::make_unique<Pipeline>(device, swapChain->getRenderPass());
+    pipe->createGraphicsPipeline(device, swapChain->getSwapChainImageFormat(), swapChain->getRenderPass(), this->msaaSamples);
+    this->pipelines.push_back(std::move(pipe));
+  }
+
   createCommandPool();
 
   this->swapChain->createColorResources(device, physicalDevice, msaaSamples);
@@ -217,13 +223,14 @@ void Renderer::initVulkan()
   tex->createTextureImageView(device);
   tex->createTextureSampler(device, physicalDevice);
 
-  this->loadModels();
-  AssetPool::addModel("model", "assets/models/viking_room.obj");
+  AssetPool::loadModels();
 
   std::shared_ptr<Shader> shader = AssetPool::getShader("texture");
-  shader->createUniformBuffers();
-  this->pipeline->getDescriptorLayout()->createDescriptorPool();
-  this->pipeline->getDescriptorLayout()->createDescriptorSets(shader.get(), tex.get());
+  for (int i = 0; i < this->pipelines.size(); i++) {
+    this->pipelines[i]->createUniformBuffers();
+    this->pipelines[i]->getDescriptorLayout()->createDescriptorPool();
+    this->pipelines[i]->getDescriptorLayout()->createDescriptorSets(pipelines[i].get(), tex.get());
+  }
 
   createCommandBuffers();
   this->swapChain->createSyncObjects(device);
@@ -242,14 +249,18 @@ void Renderer::restart()
   std::shared_ptr<Texture> tex1 = AssetPool::getTexture("img_tex");
   tex1->clean(device);
 
-  AssetPool::getShader("texture")->clean(device);
-
-  this->pipeline.reset();
+  for (int i = 0; i < this->pipelines.size(); i++) {
+    this->pipelines[i].reset();
+  }
+  this->pipelines.clear();
 
   // Recreation
   this->swapChain = std::make_unique<SwapChain>(physicalDevice, device, surface, msaaSamples);
-  this->pipeline = std::make_unique<Pipeline>(device, swapChain->getRenderPass());
-  this->pipeline->createGraphicsPipeline(device, swapChain->getSwapChainImageFormat(), swapChain->getRenderPass(), this->msaaSamples);
+  for (int i = 0; i < this->entitiesVec.size(); i++) {
+    std::unique_ptr<Pipeline> pipe = std::make_unique<Pipeline>(device, swapChain->getRenderPass());
+    pipe->createGraphicsPipeline(device, swapChain->getSwapChainImageFormat(), swapChain->getRenderPass(), this->msaaSamples);
+    this->pipelines.push_back(std::move(pipe));
+  }
 
   this->swapChain->createColorResources(device, physicalDevice, msaaSamples);
   this->swapChain->createDepthResources(device, physicalDevice, graphicsQueue, commandPool, msaaSamples);
@@ -261,9 +272,12 @@ void Renderer::restart()
   tex->createTextureSampler(device, physicalDevice);
 
   std::shared_ptr<Shader> shader = AssetPool::getShader("texture");
-  shader->createUniformBuffers();
-  this->pipeline->getDescriptorLayout()->createDescriptorPool();
-  this->pipeline->getDescriptorLayout()->createDescriptorSets(shader.get(), tex.get());
+
+  for (int i = 0; i < this->pipelines.size(); i++) {
+    this->pipelines[i]->createUniformBuffers();
+    this->pipelines[i]->getDescriptorLayout()->createDescriptorPool();
+    this->pipelines[i]->getDescriptorLayout()->createDescriptorSets(pipelines[i].get(), tex.get());
+  }
 
   this->swapChain->createSyncObjects(device);
 }
@@ -275,10 +289,11 @@ Renderer::~Renderer()
 
 void Renderer::clean()
 {
-  this->swapChain.reset();
   AssetPool::cleanup();
-  this->pipeline.reset();
-  // TODO: this->model.reset();
+  for (int i = 0; i < this->pipelines.size(); i++) {
+    this->pipelines[i].reset();
+  }
+  this->swapChain.reset();
 
   vkDestroyCommandPool(device, commandPool, nullptr);
 
@@ -290,31 +305,6 @@ void Renderer::clean()
 
   vkDestroySurfaceKHR(this->vkInstance, surface, nullptr);
   vkDestroyInstance(this->vkInstance, nullptr);
-}
-
-void Renderer::loadModels()
-{
-  /*const std::vector<Model::Vertex> vertices = {
-    //  X      Y       R     G     B       U     V
-    {{-0.5f, -0.5f,  0.0f}, {1.0f, 0.0f, 1.0f}, {1.0f, 0.0f}}, // Top Left Corner
-    {{ 0.5f, -0.5f,  0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}}, // Top Right Corner
-    {{ 0.5f,  0.5f,  0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}}, // Bottom Right Corner
-    {{-0.5f,  0.5f,  0.0f}, {1.0f, 1.0f, 0.0f}, {1.0f, 1.0f}}, // Bottom Left Corner
-
-    {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-    {{ 0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-    {{ 0.5f,  0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-    {{-0.5f,  0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
-  };
-
-  const std::vector<uint16_t> indices = {
-    0, 1, 2, 2, 3, 0,
-    4, 5, 6, 6, 7, 4
-  };*/
-
-  
-
-  // this->model = std::make_unique<Model>(MODEL_PATH, vertices, indices);
 }
 
 void Renderer::createInstance()
@@ -530,9 +520,6 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 
   vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-  // Bind Graphics Pipeline
-  this->pipeline->bind(commandBuffer);
-
   VkViewport viewport{};
   viewport.x = 0.0f;
   viewport.y = 0.0f;
@@ -547,10 +534,14 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
   scissor.extent = swapChain->getSwapChainExtent();
   vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-  for (ModelRenderer& m : modelsVec) {
-    std::shared_ptr<Model> model = m.model.lock();
+  // Bind Graphics Pipeline
+  for (int i = 0; i < this->entitiesVec.size(); i++) {
+    this->pipelines[i]->bind(commandBuffer);
+
+    std::shared_ptr<Model> model = this->entitiesVec[i].get().getComponent<ModelRenderer>().model.lock();
     model->bind(commandBuffer);
-    this->pipeline->getDescriptorLayout()->bind(commandBuffer);
+
+    this->pipelines[i]->getDescriptorLayout()->bind(pipelines[i].get(), commandBuffer);
     model->draw(commandBuffer);
   }
 
@@ -580,8 +571,9 @@ void Renderer::drawFrame()
   }
 
   // Update uniform buffers.
-  std::shared_ptr<Shader> shader = AssetPool::getShader("texture");
-  shader->updateUniformBuffer(this->swapChain->currentFrame);
+  for (int i = 0; i < this->pipelines.size(); i++) {
+    this->pipelines[i]->updateUniformBuffer(this->swapChain->currentFrame, i);
+  }
 
   // Only reset the fence if we are submitting work.
   vkResetFences(device, 1, &(swapChain->getInFlightFences()[swapChain->currentFrame]));
@@ -753,19 +745,14 @@ bool Renderer::checkValidationLayerSupport()
   return true;
 }
 
-void Renderer::addModel(ModelRenderer& model)
-{
-  bool found = false; // TODO: modelVec.empty() || !(std::count(modelVec.begin(), modelVec.end(), model));
-
-  if (!found) {
-    modelsVec.insert(modelsVec.begin(), model);
-  }
-}
-
 void Renderer::addEntity(Entity& e)
 {
+  // TODO: modelVec.empty() || !(std::count(modelVec.begin(), modelVec.end(), model));
+  bool found = false;
   ModelRenderer& m = e.getComponent<ModelRenderer>();
-  addModel(m);
+  if (!found) {
+    entitiesVec.insert(entitiesVec.begin(), e);
+  }
 }
 
 // Getters and Setters
@@ -795,11 +782,6 @@ const std::unique_ptr<SwapChain> &Renderer::getSwapChain() const
   return this->swapChain;
 }
 
-const std::unique_ptr<Pipeline> &Renderer::getPipeline() const
-{
-  return this->pipeline;
-}
-
 VkSampleCountFlagBits Renderer::getMsaaSample()
 {
   return this->msaaSamples;
@@ -808,4 +790,14 @@ VkSampleCountFlagBits Renderer::getMsaaSample()
 VkSampleCountFlagBits Renderer::getMaxMsaaSamples()
 {
   return this->maxMsaaSamples;
+}
+
+const std::optional<std::reference_wrapper<Entity>> Renderer::getEntity(int index)
+{
+  if (index >= entitiesVec.size()) {
+    std::cout << "Warning: No rendering entity in '" << index << "' index.\n";
+    return {};
+  }
+
+  return this->entitiesVec[index];
 }

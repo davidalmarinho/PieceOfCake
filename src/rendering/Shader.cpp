@@ -15,15 +15,7 @@ Shader::Shader(VkDevice device, const std::string fragmentShaderFilepath, const 
 
 Shader::~Shader()
 {
-  this->clean(cachedDevice);
-}
 
-void Shader::clean(VkDevice device)
-{
-  for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-    vkDestroyBuffer(device, uniformBuffers[i], nullptr);
-    vkFreeMemory(device, uniformBuffersMemory[i], nullptr);
-  }
 }
 
 /**
@@ -48,55 +40,6 @@ VkShaderModule Shader::compile(VkDevice device, const std::vector<char> &code)
   return shaderModule;
 }
 
-void Shader::updateUniformBuffer(uint32_t currentFrame)
-{
-  // TODO: This test calculates a time that should be proveninet of the frame rate.
-  static auto startTime = std::chrono::high_resolution_clock::now();
-
-  auto currentTime = std::chrono::high_resolution_clock::now();
-  float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
-  UniformBufferObject ubo{};
-
-  for (int i = 0; i < 1; i++) {
-    ModelRenderer& m = Engine::get()->getRenderer()->modelsVec[i];
-
-    ubo.model = m.entity->getComponent<Transform>().getTranslationMatrix() * m.entity->getComponent<Transform>().getScaleMatrix() * m.entity->getComponent<Transform>().getRotationMatrix();
-    ubo.view = Engine::get()->getCamera().getComponent<PerspectiveCamera>().getViewMatrix();
-    ubo.proj = glm::perspective(glm::radians(45.0f), 
-                                Engine::get()->getRenderer()->getSwapChain()->getSwapChainExtent().width / 
-                                static_cast<float>(Engine::get()->getRenderer()->getSwapChain()->getSwapChainExtent().height), 
-                                0.1f, 10.0f);
-
-    ubo.proj[1][1] *= -1;
-  }
-
-  memcpy(uniformBuffersMapped[currentFrame], &ubo, sizeof(ubo));
-}
-
-void Shader::createUniformBuffers()
-{
-  VkDeviceSize bufferSize = sizeof(Shader::UniformBufferObject);
-
-  uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-  uniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
-  uniformBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
-
-  VkDevice device = Engine::get()->getRenderer()->getDevice();
-  VkPhysicalDevice physicalDevice = Engine::get()->getRenderer()->getPhysicalDevice();
-
-  for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-    Utils::createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 
-                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
-                 uniformBuffers[i], uniformBuffersMemory[i], device, physicalDevice);
-
-    // Map the buffer right after creation using vkMapMemory to get a pointer to 
-    // which we can write the data later on.
-    // This technique is called "persistent mapping".
-    vkMapMemory(device, uniformBuffersMemory[i], 0, bufferSize, 0, &uniformBuffersMapped[i]);
-  }
-}
-
 // Getters and Setters
 
 const std::vector<char> Shader::getFragmentShaderCode()
@@ -117,9 +60,4 @@ const std::string Shader::getFragmentShaderFilepath()
 const std::string Shader::getVertexShaderFilepath()
 {
   return this->vertexShaderFilepath;
-}
-
-const std::vector<VkBuffer> Shader::getUniformBuffers()
-{
-  return this->uniformBuffers;
 }

@@ -108,6 +108,8 @@ void SwapChain::clean(VkDevice device, VkSampleCountFlagBits msaaSample)
     vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
     vkDestroyFence(device, inFlightFences[i], nullptr);
   }
+
+  vkDestroyRenderPass(device, renderPass, nullptr);
 }
 
 void SwapChain::restartSwapChain(VkDevice device, VkSampleCountFlagBits msaaSample)

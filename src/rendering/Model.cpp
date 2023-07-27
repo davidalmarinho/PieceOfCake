@@ -10,9 +10,8 @@
 Model::Model(const std::string FILEPATH, const std::vector<Vertex> &vertices,  
              std::vector<uint32_t> indices) : FILEPATH(FILEPATH), cachedDevice(Engine::get()->getRenderer()->getDevice())
 {
-  this->createVertexBuffer(vertices);
-  this->createIndexBuffer(indices);
-  this->indicesCount = indices.size();
+  this->vertices = vertices;
+  this->indices  = indices;
 }
 
 Model::~Model()
@@ -22,6 +21,16 @@ Model::~Model()
 
   vkDestroyBuffer(cachedDevice, vertexBuffer, nullptr);
   vkFreeMemory(cachedDevice, vertexBufferMemory, nullptr);
+}
+
+void Model::init()
+{
+  this->createVertexBuffer(vertices);
+  this->createIndexBuffer(indices);
+  this->indicesCount = indices.size();
+
+  this->indices.clear();
+  this->vertices.clear();
 }
 
 void Model::createVertexBuffer(const std::vector<Vertex> &vertices)

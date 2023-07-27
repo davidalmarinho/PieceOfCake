@@ -30,6 +30,8 @@ public:
 	static const std::shared_ptr<Texture> getTexture(const std::string resourceID);
 	static void addModel(const std::string resourceID, const std::string modelPath);
 
+	static void loadModels();
+
 	/** TODO: This description is outdated.
 	 * @brief Gets the Model object by reference stored in its std::map.
 	 * This function doesn't take ownership responsibility.

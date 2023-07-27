@@ -31,6 +31,7 @@ public:
 
   Model(const std::string FILEPATH, const std::vector<Vertex> &vertices, std::vector<uint32_t> indices);
   ~Model();
+  void init();
 
   const std::string FILEPATH;
 
@@ -46,6 +47,9 @@ public:
   uint32_t getIndicesCount();
 
 private:
+  std::vector<Vertex> vertices;  
+  std::vector<uint32_t> indices;
+
   // For vertex buffers
   VkBuffer vertexBuffer;
   VkDeviceMemory vertexBufferMemory;

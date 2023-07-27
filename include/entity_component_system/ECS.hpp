@@ -36,7 +36,7 @@ template <typename T> inline ComponentID getComponentTypeID() noexcept
 class Component
 {
 public:
-  Entity *entity;
+  Entity* entity;
 
   virtual ~Component() = default;
 
