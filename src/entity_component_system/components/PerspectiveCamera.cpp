@@ -63,6 +63,7 @@ void PerspectiveCamera::adjustDirection(float deltaTime)
   direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
   direction.y = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
   direction.z = sin(glm::radians(pitch));
+
   this->targetPosition = glm::normalize(direction);
 }
 
@@ -76,7 +77,7 @@ const glm::mat4& PerspectiveCamera::getViewMatrix()
 {
   this->viewMatrix = glm::lookAt(
     this->position,                        // Camera position.
-    this->position + this->targetPosition, // this->position + this->targetPosition,        // Camera looking at.
+    this->position + this->targetPosition, // Camera looking at.
     glm::vec3(0.0f, 0.0f, 1.0f)            // Up vector.
   );
 

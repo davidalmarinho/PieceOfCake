@@ -560,7 +560,8 @@ void Renderer::drawFrame()
 
   // Acquire an image from the swap chain.
   uint32_t imageIndex;
-  VkResult result = vkAcquireNextImageKHR(device, swapChain->getSwapChain(), UINT64_MAX, swapChain->getImageAvailableSemaphores()[swapChain->currentFrame], VK_NULL_HANDLE, &imageIndex);
+  VkResult result = vkAcquireNextImageKHR(device, swapChain->getSwapChain(), 
+                    UINT64_MAX, swapChain->getImageAvailableSemaphores()[swapChain->currentFrame], VK_NULL_HANDLE, &imageIndex);
 
   if (result == VK_ERROR_OUT_OF_DATE_KHR) { // Means that the window has been rezised and now we have to recreate the swapchain
     recreateSwapChain();

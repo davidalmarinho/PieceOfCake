@@ -17,7 +17,6 @@ private:
   glm::mat4 viewMatrix{1.0f};
   float foV = 60.0f; // Fied of View in degres.
   float aspectRatio = 800.0f / 600.0f;
-  float zNear = 0.1f, zFar = 10.0f;
 
   void moveCamera(float deltaTime);
   void adjustDirection(float deltaTime);
@@ -25,6 +24,7 @@ private:
 public:
   // For translation.
   glm::vec3 position = glm::vec3(4.0f, 2.0f, 2.0f);
+  float zNear = 0.1f, zFar = 10.0f;
 
   // Euler rotations.
   float pitch = -30.0f;

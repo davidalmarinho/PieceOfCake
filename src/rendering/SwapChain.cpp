@@ -370,17 +370,13 @@ VkSurfaceFormatKHR SwapChain::chooseSwapSurfaceFormat(const std::vector<VkSurfac
 VkPresentModeKHR SwapChain::chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes)
 {
   for (const auto &availablePresentMode : availablePresentModes) {
-    if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
+    if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR && Engine::get()->getWindow()->isVsyncEnabled())
       return availablePresentMode;
-    }
+    else if (availablePresentMode == VK_PRESENT_MODE_IMMEDIATE_KHR && !Engine::get()->getWindow()->isVsyncEnabled())
+      return availablePresentMode;
   }
 
-  if (Engine::get()->getWindow()->isVsyncEnabled()) {
-    return VK_PRESENT_MODE_FIFO_KHR;
-  }
-  else {
-    return VK_PRESENT_MODE_IMMEDIATE_KHR;
-  }
+  return VK_PRESENT_MODE_FIFO_KHR;
 }
 
 // MSAA configuration.

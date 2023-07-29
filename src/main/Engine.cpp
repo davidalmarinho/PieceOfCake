@@ -116,7 +116,7 @@ void Engine::mainLoop()
 {
   float lastTime = glfwGetTime();
   float accumulator = 0.0f;
-  const unsigned short MAX_FPS = 6000;
+  const unsigned short MAX_FPS = 60;
   const float MAX_FPS_PER_SEC = 1.0f / MAX_FPS;
 
   // Show FPS / Second
@@ -131,6 +131,9 @@ void Engine::mainLoop()
     timer += delta;
     accumulator += delta;
 
+    if (delta < MAX_FPS_PER_SEC) {
+      delta = MAX_FPS_PER_SEC;
+    }
     lastTime = currentTime;
 
     // Controls frame rate.

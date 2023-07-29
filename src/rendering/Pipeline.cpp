@@ -266,17 +266,18 @@ void Pipeline::updateUniformBuffer(uint32_t currentFrame, int modelRendererIndex
 
   if (Engine::get()->getRenderer()->getEntity(modelRendererIndex)) {
     const Entity& e = Engine::get()->getRenderer()->getEntity(modelRendererIndex).value();
-    ubo.model = e.getComponent<Transform>().getTranslationMatrix();
+    ubo.model = e.getComponent<Transform>().getTranslationMatrix() * e.getComponent<Transform>().getScaleMatrix() * e.getComponent<Transform>().getRotationMatrix();
   }
   else {
     ubo.model = glm::translate(glm::vec3(0, 0, 0));
   }
 
   ubo.view = Engine::get()->getCamera().getComponent<PerspectiveCamera>().getViewMatrix();
-  ubo.proj = glm::perspective(glm::radians(45.0f), 
+  ubo.proj = glm::perspective(glm::radians(Engine::get()->getCamera().getComponent<PerspectiveCamera>().getFoV()), 
                               Engine::get()->getRenderer()->getSwapChain()->getSwapChainExtent().width / 
                               static_cast<float>(Engine::get()->getRenderer()->getSwapChain()->getSwapChainExtent().height), 
-                              0.1f, 10.0f);
+                              Engine::get()->getCamera().getComponent<PerspectiveCamera>().zNear, 
+                              Engine::get()->getCamera().getComponent<PerspectiveCamera>().zFar);
 
   ubo.proj[1][1] *= -1;
 
