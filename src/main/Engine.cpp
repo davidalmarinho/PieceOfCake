@@ -34,7 +34,7 @@ void Engine::init()
   AssetPool::addShader(this->renderer->getDevice(), "texture", "shaders/texture_fragment_shader.spv", "shaders/texture_vertex_shader.spv");
   AssetPool::addModel("model", "assets/models/viking_room.obj");
 
-  for (int i = 0; i < 20; i++) {
+  for (int i = 0; i < 1; i++) {
     Entity &e(entitiesManager.addEntity());
     e.addComponent<Transform>(glm::vec3(0, i * 2.0f, 0));
     e.addComponent<ModelRenderer>(AssetPool::getModel("model"));

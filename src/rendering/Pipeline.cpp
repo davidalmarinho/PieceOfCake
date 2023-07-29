@@ -266,7 +266,7 @@ void Pipeline::updateUniformBuffer(uint32_t currentFrame, int modelRendererIndex
 
   if (Engine::get()->getRenderer()->getEntity(modelRendererIndex)) {
     const Entity& e = Engine::get()->getRenderer()->getEntity(modelRendererIndex).value();
-    ubo.model = e.getComponent<Transform>().getTranslationMatrix() * e.getComponent<Transform>().getScaleMatrix() * e.getComponent<Transform>().getRotationMatrix();
+    ubo.model = e.getComponent<Transform>().getModelMatrix();
   }
   else {
     ubo.model = glm::translate(glm::vec3(0, 0, 0));
@@ -278,6 +278,14 @@ void Pipeline::updateUniformBuffer(uint32_t currentFrame, int modelRendererIndex
                               static_cast<float>(Engine::get()->getRenderer()->getSwapChain()->getSwapChainExtent().height), 
                               Engine::get()->getCamera().getComponent<PerspectiveCamera>().zNear, 
                               Engine::get()->getCamera().getComponent<PerspectiveCamera>().zFar);
+
+  if (Engine::get()->getRenderer()->getEntity(modelRendererIndex)) {
+    const Entity& e = Engine::get()->getRenderer()->getEntity(modelRendererIndex).value();
+    ubo.normalMatrix = e.getComponent<Transform>().getNormalMatrix();
+  }
+  else {
+    ubo.normalMatrix = glm::identity<glm::mat3>();
+  }
 
   ubo.proj[1][1] *= -1;
 

@@ -9,7 +9,8 @@ class Transform : public Component
 private:
   glm::vec3 position;
   glm::vec3 scaleVec = glm::vec3{1.0f};
-  glm::vec3 rotation = glm::vec3{0.0f};
+  glm::vec3 rotation = glm::vec3(0.0f, 0.0f, 0.0f);
+  glm::mat3 normalMatrix = glm::mat3{1.0f};
 
 public:  
   Transform(glm::vec3 position);
@@ -27,6 +28,8 @@ public:
   glm::mat4 getTranslationMatrix();
   glm::mat4 getRotationMatrix();
   glm::mat4 getScaleMatrix();
+  glm::mat3 getNormalMatrix();
+  glm::mat4 getModelMatrix();
 
   // Encapsulation.
   const glm::vec3 getPosition();

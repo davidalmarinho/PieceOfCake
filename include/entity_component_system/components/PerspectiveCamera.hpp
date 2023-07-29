@@ -24,6 +24,7 @@ private:
 public:
   // For translation.
   glm::vec3 position = glm::vec3(4.0f, 2.0f, 2.0f);
+  // glm::vec3 position = glm::vec3(4.0f, 2.0f, 2.0f);
   float zNear = 0.1f, zFar = 10.0f;
 
   // Euler rotations.

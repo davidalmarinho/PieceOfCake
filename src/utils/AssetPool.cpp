@@ -152,7 +152,20 @@ void AssetPool::insertModel(const std::string resourceID, const std::string MODE
         1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
       };
 
-      vertex.color = {1.0f, 1.0f, 1.0f};
+			vertex.color = {
+				attrib.colors[3 * index.vertex_index + 0],
+        attrib.colors[3 * index.vertex_index + 1],
+        attrib.colors[3 * index.vertex_index + 2]
+			};
+
+      // vertex.color = {1.0f, 1.0f, 1.0f};
+
+			vertex.normalCoords = {
+				attrib.normals[3 * index.normal_index + 0],
+				attrib.normals[3 * index.normal_index + 1],
+				attrib.normals[3 * index.normal_index + 2]
+				// 0,0,0
+			};
 
       /**
        * Every time we read a vertex from the OBJ file, we will check if it was already 

@@ -17,6 +17,7 @@ public:
     glm::vec3 pos;
     glm::vec3 color;
     glm::vec2 texCoords;
+    glm::vec3 normalCoords;
 
     // Tell Vulkan how to pass this data format to the vertex shader once it's been uploaded into GPU memory. 
     static VkVertexInputBindingDescription getBindingDescription();
@@ -24,7 +25,7 @@ public:
     // Describe how to extract a vertex attribute from a chunk of vertex data 
     // originating from a binding description. We have three attributes: position;
     // color and texture coordinates. So we need three attribute description structs.
-    static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions();
+    static std::array<VkVertexInputAttributeDescription, 4> getAttributeDescriptions();
 
     bool operator==(const Vertex& other) const;
   };

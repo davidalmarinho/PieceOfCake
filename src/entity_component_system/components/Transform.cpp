@@ -81,6 +81,17 @@ void Transform::scale(float x, float y, float z)
   this->scaleVec.z += z;
 }
 
+glm::mat4 Transform::getModelMatrix()
+{
+  return getTranslationMatrix() * getScaleMatrix() * getRotationMatrix();
+}
+
+glm::mat3 Transform::getNormalMatrix()
+{
+  glm::mat4 modelMatrix = getModelMatrix();
+  return glm::transpose(glm::inverse(glm::mat3(modelMatrix)));
+}
+
 glm::mat4 Transform::getTranslationMatrix()
 {
   glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), position);
@@ -96,7 +107,7 @@ glm::mat4 Transform::getScaleMatrix()
 glm::mat4 Transform::getRotationMatrix()
 {
   // Conversion from Euler angles (in radians) to Quaternion
-  glm::quat rotQuat = glm::quat(glm::radians(this->rotation));;
+  glm::quat rotQuat = glm::quat(glm::radians(this->rotation));
   glm::mat4 rotationMatrix = glm::mat4_cast(rotQuat);
 
   return rotationMatrix;

@@ -110,9 +110,9 @@ VkVertexInputBindingDescription Model::Vertex::getBindingDescription()
   return bindingDescription;
 }
 
-std::array<VkVertexInputAttributeDescription, 3> Model::Vertex::getAttributeDescriptions()
+std::array<VkVertexInputAttributeDescription, 4> Model::Vertex::getAttributeDescriptions()
 {
-  std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
+  std::array<VkVertexInputAttributeDescription, 4> attributeDescriptions{};
 
   // Position attribute.
   attributeDescriptions[0].binding  = 0; // Tell Vulkan from which binding the per-vertex data comes.
@@ -132,6 +132,12 @@ std::array<VkVertexInputAttributeDescription, 3> Model::Vertex::getAttributeDesc
   attributeDescriptions[2].location = 2;
   attributeDescriptions[2].format   = VK_FORMAT_R32G32_SFLOAT;
   attributeDescriptions[2].offset   = offsetof(Vertex, texCoords);
+
+  // Normal coordinates attribute.
+  attributeDescriptions[3].binding  = 0;
+  attributeDescriptions[3].location = 3;
+  attributeDescriptions[3].format   = VK_FORMAT_R32G32B32_SFLOAT;
+  attributeDescriptions[3].offset   = offsetof(Vertex, normalCoords);
 
   return attributeDescriptions;
 }
