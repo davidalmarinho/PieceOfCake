@@ -56,6 +56,22 @@ if(WIN32)
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
 endif()
 
+# Dear ImGui
+set(IMGUI_DIR libs/dear_imgui/)
+include_directories(${IMGUI_DIR} ${IMGUI_DIR}/backends ..)
+add_library(dear_imgui
+  STATIC
+  ${IMGUI_DIR}/imgui.cpp
+  ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp
+  ${IMGUI_DIR}/backends/imgui_impl_vulkan.cpp
+  ${IMGUI_DIR}/imgui_draw.cpp
+  ${IMGUI_DIR}/imgui_demo.cpp
+  ${IMGUI_DIR}/imgui_tables.cpp
+  ${IMGUI_DIR}/imgui_widgets.cpp
+)
+# Enable and disable ImGui exportation.
+add_compile_definitions(IMGUI_ENABLED)
+
 add_subdirectory(src)
 
 # Windows setting

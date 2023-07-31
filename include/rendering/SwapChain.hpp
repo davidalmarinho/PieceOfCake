@@ -106,4 +106,5 @@ public:
   std::vector<VkSemaphore> getRenderFinishedSemaphores();
   std::vector<VkFence> getInFlightFences();
   std::vector<VkFence> getImagesInFlight();
+  int getSwapChainImageViewsSize();
 };

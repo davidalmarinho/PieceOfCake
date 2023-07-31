@@ -15,7 +15,7 @@ target_include_directories(textures
 	"${PROJECT_SOURCE_DIR}/include/rendering/window/"
 	"${PROJECT_SOURCE_DIR}/include/rendering/"
 	"${PROJECT_SOURCE_DIR}/include/input_device/"
-	"${PROJECT_SOURCE_DIR}/include/stb_image/"
+	"${PROJECT_SOURCE_DIR}/libs/stb_image/"
 	"${PROJECT_SOURCE_DIR}/include/utils/"
 	"${PROJECT_SOURCE_DIR}/include/main/"
 )

@@ -17,6 +17,7 @@ target_include_directories(engine
 target_link_libraries(engine
 	Vulkan::Vulkan
 	glm::glm
+	dear_imgui
 )
 
 add_executable(${PROJECT_NAME}
@@ -45,6 +46,7 @@ target_link_libraries(${PROJECT_NAME}
 	input_device
 	ecs
 	components
+	gui
 )
 
 # Libraries loading and linking

@@ -1,6 +1,7 @@
 #pragma once
 
 #define GLFW_INCLUDE_VULKAN
+
 #include <GLFW/glfw3.h>
 
 #include <iostream>
@@ -122,14 +123,22 @@ private:
   VkSampleCountFlagBits maxMsaaSamples = VK_SAMPLE_COUNT_1_BIT; // Keeps track of how many samples the hardware can use.
   VkSampleCountFlagBits getMaxUsableSampleCount();
 
+#ifdef IMGUI_ENABLED
+  VkDescriptorPool imguiPool;
+  void initGui();
+  void renderImGui(VkCommandBuffer commandBuffer);
+  void cleanGui();
+#endif
+
   void initVulkan();
 
   void createInstance();
   void pickPhysicalDevice();
   void createLogicalDevice();
   void recreateSwapChain();
-  void createCommandPool();
+  void createCommandPool(VkCommandPool* commandPool, VkCommandPoolCreateFlags commandPoolCreateFlags);
   void createCommandBuffers();
+  void createCommandBuffer(VkCommandBuffer* commandBuffer, uint32_t commandBufferCount, VkCommandPool &commandPool);
   void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
   bool isDeviceSuitable(VkPhysicalDevice device);
   bool checkDeviceExtensionSupport(VkPhysicalDevice device);

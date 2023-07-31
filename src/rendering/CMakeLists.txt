@@ -24,11 +24,13 @@ target_include_directories(rendering
 	"${PROJECT_SOURCE_DIR}/include/tiny_obj_loader/"
 	"${PROJECT_SOURCE_DIR}/include/entity_component_system/"
 	"${PROJECT_SOURCE_DIR}/include/entity_component_system/components/"
+	"${PROJECT_SOURCE_DIR}/include/gui/"
 )
 
 target_link_libraries(rendering
 	Vulkan::Vulkan
 	glm::glm
+	dear_imgui
 )
 
 add_subdirectory(window)

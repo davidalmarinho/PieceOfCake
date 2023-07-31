@@ -14,6 +14,11 @@
 // TODO: Windows imports for RAM calculations
 #endif
 
+#ifdef IMGUI_ENABLED
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_vulkan.h"
+#endif
+
 Engine::Engine() : camera(entitiesManager.addEntity())
 {
   
@@ -116,7 +121,7 @@ void Engine::mainLoop()
 {
   float lastTime = glfwGetTime();
   float accumulator = 0.0f;
-  const unsigned short MAX_FPS = 60;
+  const unsigned short MAX_FPS = 6000;
   const float MAX_FPS_PER_SEC = 1.0f / MAX_FPS;
 
   // Show FPS / Second
@@ -161,8 +166,6 @@ void Engine::mainLoop()
       timer = 0.0f;
     }
   }
-
-  vkDeviceWaitIdle(this->renderer->getDevice());
 }
 
 void Engine::run()

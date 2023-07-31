@@ -485,3 +485,8 @@ std::vector<VkFence> SwapChain::getImagesInFlight()
 {
   return this->imagesInFlight;
 }
+
+int SwapChain::getSwapChainImageViewsSize()
+{
+  return this->swapChainImageViews.size();
+}

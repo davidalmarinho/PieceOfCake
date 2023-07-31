@@ -7,6 +7,13 @@
 #include "Engine.hpp"
 
 #include "ModelRenderer.hpp"
+#include "Utils.hpp"
+
+#ifdef IMGUI_ENABLED
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_vulkan.h"
+#include "ImGuiLayer.hpp"
+#endif
 
 Renderer::MipmapSetting operator++(Renderer::MipmapSetting& mipmapSetting, int)
 {
@@ -212,7 +219,7 @@ void Renderer::initRendering()
     this->pipelines.push_back(std::move(pipe));
   }
 
-  createCommandPool();
+  createCommandPool(&commandPool, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 
   this->swapChain->createColorResources(device, physicalDevice, msaaSamples);
   this->swapChain->createDepthResources(device, physicalDevice, graphicsQueue, commandPool, msaaSamples);
@@ -234,12 +241,20 @@ void Renderer::initRendering()
 
   createCommandBuffers();
   this->swapChain->createSyncObjects(device);
+
+#ifdef IMGUI_ENABLED
+  this->initGui();
+#endif
 }
 
 void Renderer::restart()
 {
   // Destruction
   vkDeviceWaitIdle(device);
+
+#ifdef IMGUI_ENABLED
+  this->cleanGui();
+#endif
 
   // Convert MsaaSetting enum into the VkSampleCountFlagBits enum.
   msaaSamples = static_cast<VkSampleCountFlagBits>(static_cast<int>(msaaSetting));
@@ -280,6 +295,10 @@ void Renderer::restart()
   }
 
   this->swapChain->createSyncObjects(device);
+
+#ifdef IMGUI_ENABLED
+  this->initGui();
+#endif
 }
 
 Renderer::~Renderer()
@@ -289,6 +308,12 @@ Renderer::~Renderer()
 
 void Renderer::clean()
 {
+  vkDeviceWaitIdle(device);
+
+#ifdef IMGUI_ENABLED
+  this->cleanGui();
+#endif
+
   AssetPool::cleanup();
   for (int i = 0; i < this->pipelines.size(); i++) {
     this->pipelines[i].reset();
@@ -456,16 +481,16 @@ void Renderer::recreateSwapChain()
                                      commandPool, surface, msaaSamples);
 }
 
-void Renderer::createCommandPool()
+void Renderer::createCommandPool(VkCommandPool* commandPool, VkCommandPoolCreateFlags commandPoolCreateFlags)
 {
   QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice, surface);
 
   VkCommandPoolCreateInfo poolInfo{};
   poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-  poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+  poolInfo.flags = commandPoolCreateFlags;
   poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
 
-  if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
+  if (vkCreateCommandPool(device, &poolInfo, nullptr, commandPool) != VK_SUCCESS) {
     throw std::runtime_error("Error: Command Pool creation has failed.\n");
   }
 }
@@ -486,6 +511,18 @@ void Renderer::createCommandBuffers()
   }
 }
 
+void Renderer::createCommandBuffer(VkCommandBuffer* commandBuffer, uint32_t commandBufferCount, VkCommandPool &commandPool)
+{
+  VkCommandBufferAllocateInfo commandBufferAllocateInfo = {};
+  commandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+  commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+  commandBufferAllocateInfo.commandPool = commandPool;
+  commandBufferAllocateInfo.commandBufferCount = commandBufferCount;
+  if (vkAllocateCommandBuffers(device, &commandBufferAllocateInfo, commandBuffer) != VK_SUCCESS) {
+    throw std::runtime_error("Error: Failed to allocate a command buffer.\n");
+  }
+}
+
 /**
    * @brief Function that writes the commands we want to execute into a command buffer.
    *
@@ -496,7 +533,7 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 {
   VkCommandBufferBeginInfo beginInfo{};
   beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-  beginInfo.flags = 0;
+  // beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
   beginInfo.pInheritanceInfo = nullptr;
 
   if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
@@ -544,6 +581,10 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
     this->pipelines[i]->getDescriptorLayout()->bind(pipelines[i].get(), commandBuffer);
     model->draw(commandBuffer);
   }
+
+#ifdef IMGUI_ENABLED
+  this->renderImGui(commandBuffer);
+#endif
 
   vkCmdEndRenderPass(commandBuffer);
 
@@ -755,6 +796,92 @@ void Renderer::addEntity(Entity& e)
     entitiesVec.insert(entitiesVec.begin(), e);
   }
 }
+
+#ifdef IMGUI_ENABLED
+void Renderer::initGui()
+{
+  // Create descriptor pool for imgui. Copied from imgui demo itself.
+	VkDescriptorPoolSize pool_sizes[] =
+	{
+		{ VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
+		{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
+	};
+
+	VkDescriptorPoolCreateInfo pool_info = {};
+	pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+	pool_info.maxSets = 1000;
+	pool_info.poolSizeCount = std::size(pool_sizes);
+	pool_info.pPoolSizes = pool_sizes;
+
+	vkCreateDescriptorPool(this->device, &pool_info, nullptr, &imguiPool);
+
+  // Setup Dear ImGui context
+  IMGUI_CHECKVERSION();
+  ImGui::CreateContext();
+  ImGuiIO& io = ImGui::GetIO(); (void)io;
+  // io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+  // io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+  io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
+  // Setup Dear ImGui style
+  ImGui::StyleColorsDark();
+  // ImGui::StyleColorsLight();
+  // ImGui::StyleColorsClassic();
+
+  // Setup Platform/Renderer bindings
+  ImGui_ImplGlfw_InitForVulkan(Engine::get()->getWindow()->getGlfwWindow(), true);
+  ImGui_ImplVulkan_InitInfo init_info = {};
+  init_info.Instance = this->vkInstance;
+  init_info.PhysicalDevice = this->physicalDevice;
+  init_info.Device = this->device;
+  init_info.Queue = this->graphicsQueue;
+  init_info.PipelineCache = VK_NULL_HANDLE;
+  init_info.DescriptorPool = imguiPool;
+  init_info.Allocator = VK_NULL_HANDLE;
+  init_info.MinImageCount = 2;
+  init_info.ImageCount = MAX_FRAMES_IN_FLIGHT;
+  init_info.CheckVkResultFn = 0;
+  init_info.MSAASamples = this->msaaSamples;
+
+  ImGui_ImplVulkan_Init(&init_info, this->swapChain->getRenderPass());
+
+  VkCommandBuffer commandBuffer = Utils::beginSingleTimeCommands(this->device, this->commandPool);
+  ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
+  Utils::endSingleTimeCommands(this->device, this->graphicsQueue, this->commandPool, commandBuffer);
+
+  vkDeviceWaitIdle(this->device);
+  ImGui_ImplVulkan_DestroyFontUploadObjects();
+}
+
+void Renderer::renderImGui(VkCommandBuffer commandBuffer)
+{
+  ImGui_ImplVulkan_NewFrame();
+  ImGui_ImplGlfw_NewFrame();
+  ImGui::NewFrame();
+  ImGui::ShowDemoWindow();
+  ImGuiLayer::render();
+  ImGui::Render();
+  ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
+}
+
+void Renderer::cleanGui()
+{
+  ImGui_ImplVulkan_Shutdown();
+  ImGui_ImplGlfw_Shutdown();
+  ImGui::DestroyContext();
+  vkDestroyDescriptorPool(device, imguiPool, nullptr);
+}
+#endif
 
 // Getters and Setters
 
