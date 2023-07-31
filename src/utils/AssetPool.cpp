@@ -217,6 +217,15 @@ std::shared_ptr<Model> AssetPool::getModel(const std::string resourceID)
 	return mapObj->second;
 }
 
+void AssetPool::loadTextures(VkDevice device, VkPhysicalDevice physicalDevice, VkQueue graphicsQueue, VkCommandPool commandPool)
+{
+	for (auto mapObj : texturesMap) {
+		mapObj.second->createTextureImage(device, physicalDevice, graphicsQueue, commandPool);
+  	mapObj.second->createTextureImageView(device);
+  	mapObj.second->createTextureSampler(device, physicalDevice);
+	}
+}
+
 void AssetPool::loadModels()
 {
 	for (auto mpObj : modelsMap) {

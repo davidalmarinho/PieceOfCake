@@ -7,6 +7,7 @@
 #include "Engine.hpp"
 
 #include "ModelRenderer.hpp"
+#include "TextureRenderer.hpp"
 #include "Utils.hpp"
 
 #ifdef IMGUI_ENABLED
@@ -225,18 +226,16 @@ void Renderer::initRendering()
   this->swapChain->createDepthResources(device, physicalDevice, graphicsQueue, commandPool, msaaSamples);
   this->swapChain->createFramebuffers(device, msaaSamples);
 
-  std::shared_ptr<Texture> tex = AssetPool::getTexture("img_tex");
-  tex->createTextureImage(device, physicalDevice, graphicsQueue, commandPool);
-  tex->createTextureImageView(device);
-  tex->createTextureSampler(device, physicalDevice);
-
+  AssetPool::loadTextures(device, physicalDevice, graphicsQueue, commandPool);
   AssetPool::loadModels();
 
   std::shared_ptr<Shader> shader = AssetPool::getShader("texture");
-  for (int i = 0; i < this->pipelines.size(); i++) {
+  for (int i = 0; i < this->entitiesVec.size(); i++) {
     this->pipelines[i]->createUniformBuffers();
     this->pipelines[i]->getDescriptorLayout()->createDescriptorPool();
-    this->pipelines[i]->getDescriptorLayout()->createDescriptorSets(pipelines[i].get(), tex.get());
+
+    std::weak_ptr<Texture> tex = entitiesVec[i].get().getComponent<TextureRenderer>().texture;
+    this->pipelines[i]->getDescriptorLayout()->createDescriptorSets(pipelines[i].get(), tex.lock().get());
   }
 
   createCommandBuffers();

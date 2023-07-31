@@ -5,6 +5,7 @@
 #include "Transform.hpp"
 #include "PerspectiveCamera.hpp"
 #include "ModelRenderer.hpp"
+#include "TextureRenderer.hpp"
 
 #ifdef unix
 #include <iostream>
@@ -36,13 +37,18 @@ void Engine::init()
 
   this->renderer->init();
   AssetPool::addTexture(this->renderer->getDevice(), "img_tex", "assets/textures/viking_room.png");
+  AssetPool::addTexture(this->renderer->getDevice(), "img_tex2", "assets/textures/img.jpg");
   AssetPool::addShader(this->renderer->getDevice(), "texture", "shaders/texture_fragment_shader.spv", "shaders/texture_vertex_shader.spv");
   AssetPool::addModel("model", "assets/models/viking_room.obj");
 
-  for (int i = 0; i < 1; i++) {
+  for (int i = 0; i < 20; i++) {
     Entity &e(entitiesManager.addEntity());
     e.addComponent<Transform>(glm::vec3(0, i * 2.0f, 0));
     e.addComponent<ModelRenderer>(AssetPool::getModel("model"));
+    if (i == 3)
+      e.addComponent<TextureRenderer>(AssetPool::getTexture("img_tex2"));
+    else
+      e.addComponent<TextureRenderer>(AssetPool::getTexture("img_tex"));
 
     this->renderer->addEntity(e);
   }
@@ -121,7 +127,7 @@ void Engine::mainLoop()
 {
   float lastTime = glfwGetTime();
   float accumulator = 0.0f;
-  const unsigned short MAX_FPS = 6000;
+  const unsigned short MAX_FPS = 60;
   const float MAX_FPS_PER_SEC = 1.0f / MAX_FPS;
 
   // Show FPS / Second

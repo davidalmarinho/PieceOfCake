@@ -5,6 +5,7 @@ add_library(components
 	Transform.cpp
 	PerspectiveCamera.cpp
 	ModelRenderer.cpp
+	TextureRenderer.cpp
 )
 
 target_include_directories(components
@@ -13,6 +14,7 @@ target_include_directories(components
 	"${PROJECT_SOURCE_DIR}/include/entity_component_system/components/"
 	"${PROJECT_SOURCE_DIR}/include/input_device/"
 	"${PROJECT_SOURCE_DIR}/include/rendering/"
+	"${PROJECT_SOURCE_DIR}/include/rendering/textures/"
 )
 
 target_link_libraries(components
