@@ -57,6 +57,8 @@ if(WIN32)
 endif()
 
 # Dear ImGui
+find_package(glfw3 3.3 REQUIRED)
+find_package(Vulkan REQUIRED)
 set(IMGUI_DIR libs/dear_imgui/)
 include_directories(${IMGUI_DIR} ${IMGUI_DIR}/backends ..)
 add_library(dear_imgui
@@ -68,6 +70,10 @@ add_library(dear_imgui
   ${IMGUI_DIR}/imgui_demo.cpp
   ${IMGUI_DIR}/imgui_tables.cpp
   ${IMGUI_DIR}/imgui_widgets.cpp
+)
+target_link_libraries(dear_imgui
+	glfw
+	Vulkan::Vulkan
 )
 # Enable and disable ImGui exportation.
 add_compile_definitions(IMGUI_ENABLED)
