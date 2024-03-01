@@ -51,6 +51,7 @@ REALLY NECCESSARY:
 vcpkg.exe install glfw3 --triplet=x64-windows-static
 vcpkg.exe install glew:x64-windows
 vcpkg.exe install glm
+vcpkg.exe install glm:x86-windows
 ~vcpkg.exe install glew
 ~vcpkg.exe install glew --triplet=x64-windows-static
 X vcpkg install vulkan --triplet=x64-windows-static

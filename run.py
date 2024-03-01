@@ -70,7 +70,7 @@ def compile_shader(filepath):
     compiled_shader_path = filepath.split('.')[0] + '.spv'
 
     # Compile shader
-    if (os.system(GLSLC_PATH + ' ' + filepath + ' -o ' + compiled_shader_path) == 0):
+    if (os.system(GLSLC_PATH + ' ' + "\"" + filepath + "\"" + ' -o ' + "\"" + compiled_shader_path + "\"") == 0):
         # Successful message
         print(f'{Colors.END_COLOR}-- {Colors.GREEN} > Compiled {Colors.BLUE}{filepath}{Colors.GREEN} shader. {Colors.RED}')
         compiled_shader_path_dest = compiled_shader_folder + '/' + compiled_shader_path.rsplit('/', 1)[1]
