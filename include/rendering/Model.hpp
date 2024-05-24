@@ -1,7 +1,5 @@
 #pragma once
 
-#define GLM_ENABLE_EXPERIMENTAL
-
 #include <vector>
 #include <glm/glm.hpp>
 #include <vulkan/vulkan.h>

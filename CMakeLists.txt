@@ -28,6 +28,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
   set(BOLD_CYAN    "${Esc}[1;36m")
   set(BOLD_WHITE   "${Esc}[1;37m")
 
+add_definitions(-DGLM_ENABLE_EXPERIMENTAL)
+
 # Windows setting
 if(WIN32)
   add_definitions(-DGLEW_STATIC)
