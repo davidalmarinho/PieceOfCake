@@ -47,14 +47,14 @@ vcpkg install vulkan --triplet=x64-windows-static
 vcpkg.exe install glfw3 glfw3 glew glew --triplet=x64-windows-static
 ```
 
-If you are using [vcpkg](https://vcpkg.io/en/), you also have to tell the [CMake](https://cmake.org/) where [vcpkg](https://vcpkg.io/en/) is.
+If you are using [vcpkg](https://vcpkg.io/en/), you also have to tell the [CMake](https://cmake.org/) where [vcpkg](https://vcpkg.io/en/) is.  
 To do that you can use the [run.py](https://github.com/davidalmarinho/PieceOfCake/blob/main/run.py) script.  
 Just run
 ```console
 python run.py config --vcpkg_path 'C:/path_to_vcpkg/scripts/buildsystems/vcpkg.cmake'
 ```
 
-To be able to compile the project, you have to specify the Vulkan Shader compiler path to the [run.py](https://github.com/davidalmarinho/PieceOfCake/blob/main/run.py) script inside the project directory.
+To be able to compile the project, you have to specify the Vulkan Shader compiler path to the [run.py](https://github.com/davidalmarinho/PieceOfCake/blob/main/run.py) script inside the project directory.  
 If you didn't change the path where you have installed the [Vulkan SDK](https://vulkan.lunarg.com/sdk/home), you only have to execute this command.
 ```console
 python run.py config --glslc_path 'C:/VulkanSDK/1.3.275.0/Bin/glslc'
@@ -74,6 +74,6 @@ If working on vscode, add this configuration to c_cpp_propertis.json file:
 ```
 
 ## Acknowledgments
-[Vulkan Tutorial (Book)](https://vulkan-tutorial.com/Introduction)
-[Youtube Series additional resource that I used to follow the book.](https://www.youtube.com/playlist?list=PL8327DO66nu9qYVKLDmdLW_84-yE4auCR)
-[Multiple Object Rendering Article](https://mr-vasifabdullayev.medium.com/multiple-object-rendering-in-vulkan-3d07aa583cec)
+[Vulkan Tutorial (Book)](https://vulkan-tutorial.com/Introduction)  
+[Youtube Series additional resource that I used to follow the book.](https://www.youtube.com/playlist?list=PL8327DO66nu9qYVKLDmdLW_84-yE4auCR)  
+[Multiple Object Rendering Article](https://mr-vasifabdullayev.medium.com/multiple-object-rendering-in-vulkan-3d07aa583cec)  
