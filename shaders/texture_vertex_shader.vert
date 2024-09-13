@@ -17,7 +17,7 @@ layout(location = 1) out vec2 fragTexCoords;
 
 // TODO: In future is good idea to upload this variables from a GUI interface.
 const vec3 DIRECTION_TO_LIGHT = normalize(vec3(-1.0, -3.0, -1.0));
-const float AMBIENT = 0.02;
+const float AMBIENT = 0.2;
 
 void main() {
   gl_Position = ubo.proj * ubo.view * ubo.model * vec4(inPosition, 1.0);

@@ -2,6 +2,8 @@
 
 A 3D Vulkan Renderer written in the most "loved" language, C++!
 
+![Renderer Preview](assets/poc_screenshot.png "Renderer Preview")
+
 ## Install dependencies
 
 
